@@ -49,3 +49,14 @@ test('a test date shows the days left', async ({ page }) => {
   await page.reload();
   await expect(page.getByText('30 days to go')).toBeVisible();
 });
+
+test('an official SAT date can be picked from the list', async ({ page }) => {
+  const pick = page.getByLabel('Official SAT date');
+  const first = await pick.locator('option').nth(1).getAttribute('value');
+  await pick.selectOption(first!);
+  await expect(page.getByLabel('Test date')).toHaveValue(first!);
+  await expect(page.getByText(/days to go|Tomorrow|Today\. Good luck\./)).toBeVisible();
+  await expect(page.getByText(/Register by|College Board has not confirmed|registration has closed/)).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Official SAT date')).toHaveValue(first!);
+});

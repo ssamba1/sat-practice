@@ -1,7 +1,7 @@
 import { dueItems } from '../review/schedule';
 import { skillStats, band } from '../trainer/mastery';
 import { todayCount } from '../trainer/today';
-import { weekStart, daysUntil } from '../trainer/goal';
+import { weekStart, daysUntil, upcomingSat } from '../trainer/goal';
 import { state, index, update, startToday, screen } from './store';
 
 const MINS = [10, 20, 40];
@@ -42,15 +42,23 @@ function Goal() {
   const week = st.sessions.filter(s => s.mode === 'today' && s.at >= wk);
   const mins = Math.round(week.reduce((p, s) => p + (s.ms ?? 0), 0) / 60000);
   const left = date ? daysUntil(date, now) : null;
+  const upcoming = upcomingSat(now), official = upcoming.find(d => d.date === date);
+  const setDate = (v: string) => update(s => ({ ...s, settings: { ...s.settings, goal: v ? { testDate: v } : undefined } }));
   return (
     <div class="row" style="margin-top:12px">
+      <label>Official SAT date
+        <select value={official ? date : ''} onChange={e => setDate((e.target as HTMLSelectElement).value)}>
+          <option value="">Pick one</option>
+          {upcoming.map(d => <option key={d.date} value={d.date}>{fmt(d.date)}{d.expected ? ' (expected)' : ''}</option>)}
+        </select></label>
       <label>Test date
-        <input type="date" value={date ?? ''} onChange={e => {
-          const v = (e.target as HTMLInputElement).value;
-          update(s => ({ ...s, settings: { ...s.settings, goal: v ? { testDate: v } : undefined } }));
-        }} /></label>
+        <input type="date" value={date ?? ''} onChange={e => setDate((e.target as HTMLInputElement).value)} /></label>
       {left != null && <span>{left > 1 ? `${left} days to go` : left === 1 ? 'Tomorrow' : left === 0 ? 'Today. Good luck.' : 'That date has passed'}</span>}
+      {official && <span class="hint" style="margin:0">{official.expected ? 'College Board has not confirmed this date yet.'
+        : daysUntil(official.register!, now) >= 0 ? `Register by ${fmt(official.register!)}.` : 'Regular registration has closed; late registration may still be open.'}</span>}
       <span class="hint" style="margin:0">This week: {week.length} Today session{week.length === 1 ? '' : 's'}, {mins} min.</span>
     </div>
   );
 }
+
+const fmt = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
