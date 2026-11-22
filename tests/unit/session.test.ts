@@ -91,7 +91,7 @@ describe('finish', () => {
     const { answers, record } = finish(s, 50);
     expect(answers.map(a => [a.ext, a.ok, a.sec, a.mode])).toEqual([
       ['ext1', true, 'math', 'custom'], ['ext2', false, 'rw', 'custom'], ['ext3', true, 'math', 'custom']]);
-    expect(record).toMatchObject({ correct: 2, total: 3, at: 50, doms: { H: [2, 2], CAS: [0, 1] } });
+    expect(record).toMatchObject({ correct: 2, total: 3, at: 50, doms: { Algebra: [2, 2], 'Craft and Structure': [0, 1] } });
   });
 });
 

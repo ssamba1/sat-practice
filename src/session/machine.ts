@@ -1,5 +1,5 @@
 import type { Question, Section } from '../api/questions';
-import { SPEC } from '../bank/spec';
+import { SPEC, DOMNAME } from '../bank/spec';
 import { routeModule2 } from '../bank/build';
 import { isCorrect } from '../score/check';
 import type { Answer, Mode, SessionRecord } from '../store/state';
@@ -144,7 +144,7 @@ export function finish(s: Session, now: number): { answers: Answer[]; record: Se
     }));
   });
   const doms: Record<string, [number, number]> = {};
-  for (const a of answers) { const r = doms[a.dom] ||= [0, 0]; r[1]++; if (a.ok) r[0]++; }
+  for (const a of answers) { const r = doms[DOMNAME[a.dom] ?? a.dom] ||= [0, 0]; r[1]++; if (a.ok) r[0]++; }
   const label = t.stages.filter(x => x.kind === 'module').map(x => x.label).join(' + ');
   return { answers, record: { id: String(now), at: now, label, correct: answers.filter(a => a.ok).length, total: answers.length, doms } };
 }
