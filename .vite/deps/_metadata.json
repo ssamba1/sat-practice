@@ -1,0 +1,40 @@
+{
+  "hash": "48c286b9",
+  "configHash": "35edf3a2",
+  "lockfileHash": "d3dd7258",
+  "browserHash": "861d9998",
+  "optimized": {
+    "preact/jsx-dev-runtime": {
+      "src": "../../node_modules/preact/jsx-runtime/dist/jsxRuntime.mjs",
+      "file": "preact_jsx-dev-runtime.js",
+      "fileHash": "e4d864b6",
+      "needsInterop": false
+    },
+    "preact": {
+      "src": "../../node_modules/preact/dist/preact.mjs",
+      "file": "preact.js",
+      "fileHash": "8948fefc",
+      "needsInterop": false
+    },
+    "preact/hooks": {
+      "src": "../../node_modules/preact/hooks/dist/hooks.mjs",
+      "file": "preact_hooks.js",
+      "fileHash": "6ee4ebe2",
+      "needsInterop": false
+    },
+    "@preact/signals": {
+      "src": "../../node_modules/@preact/signals/dist/signals.module.js",
+      "file": "@preact_signals.js",
+      "fileHash": "91caf1b4",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-SYECWVCB": {
+      "file": "chunk-SYECWVCB.js"
+    },
+    "chunk-RZBBS6KD": {
+      "file": "chunk-RZBBS6KD.js"
+    }
+  }
+}

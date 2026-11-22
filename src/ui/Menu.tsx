@@ -11,6 +11,7 @@ import {
   discardSaved, screen, mistakeMetas,
 } from './store';
 import { downloadBackup, restoreFile, cacheAll, cachedCount } from './data';
+import { TodayCard } from './Today';
 
 const setSetting = (patch: Partial<Settings>) => update(s => ({ ...s, settings: { ...s.settings, ...patch } }));
 const pct = (ok: number, n: number) => n ? Math.round(100 * ok / n) + '%' : '';
@@ -51,6 +52,8 @@ export function Menu() {
             <b>Discard it</b><span>Start fresh instead.</span>
           </button>
         </div>)}
+
+      <TodayCard />
 
       <div class={'guard' + (set.noActive ? '' : ' off')}>
         <label>

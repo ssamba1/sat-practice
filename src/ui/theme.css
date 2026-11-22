@@ -202,6 +202,17 @@ details summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var
 @keyframes sweep { 0% { margin-left: -35% } 100% { margin-left: 100% } }
 @media (prefers-reduced-motion: reduce) { .pbar.idle i { animation: none; width: 100%; opacity: .4 } * { transition: none !important } }
 
+/* ---------- trainer ---------- */
+.today { border: 1.5px solid var(--blue); background: var(--bluebg); border-radius: 12px; padding: 18px 20px; margin: 0 0 22px }
+.today input[type=date] { margin-left: 8px; padding: 4px 6px; border: 1.5px solid var(--line); border-radius: 5px; background: var(--card) }
+.slowtxt { color: var(--warn); font-weight: 600 }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0 }
+.tags .chip { font-size: 12.5px; padding: 3px 10px }
+caption { caption-side: top }
+table.skills { table-layout: fixed; min-width: 600px }
+table.skills th:nth-child(1) { width: 30% } table.skills th:nth-child(2) { width: 24% } table.skills th:nth-child(3) { width: 10% }
+table.skills th:nth-child(4) { width: 14% } table.skills th:nth-child(5) { width: 14% } table.skills th:nth-child(6) { width: 8% }
+
 /* ---------- vocab ---------- */
 .vocabwrap { max-width: 660px }
 .vocabtop { display: flex; align-items: center; gap: 14px; margin-bottom: 30px }

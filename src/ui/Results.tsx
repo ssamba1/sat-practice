@@ -3,7 +3,8 @@ import { LETTERS } from '../score/check';
 import { summarise, type Tally } from '../stats/summary';
 import type { Answer } from '../store/state';
 import type { Question } from '../api/questions';
-import { result, screen, startRetry, state } from './store';
+import { result, screen, startRetry, state, tagAnswer } from './store';
+import { TAGS, TAG_LABEL, tagSplit } from '../trainer/tags';
 
 const pct = (ok: number, n: number) => n ? Math.round(100 * ok / n) : 0;
 const secs = (ms: number) => ms >= 60000 ? `${Math.floor(ms / 60000)}m ${Math.round(ms % 60000 / 1000)}s` : `${Math.round(ms / 1000)}s`;
@@ -63,14 +64,22 @@ export function Results() {
       <Table title="Difficulty" rows={(['E', 'M', 'H'] as const).filter(d => s.byDiff[d]).map(d => [DIFF[d], s.byDiff[d]])} />
 
       <h2>{missed.length ? `Missed questions (${missed.length})` : 'No missed questions'}</h2>
-      {missed.map(a => <Review a={a} q={byExt.get(a.ext)!} slow={s.slow.includes(a.ext)} />)}
+      {missed.length > 0 && <p class="hint">Tag why you missed each one. Careless slips and concept gaps need different fixes, and the skill map keeps the count.</p>}
+      <WhySplit answers={r.answers} />
+      {missed.map(a => <Review a={a} q={byExt.get(a.ext)!} slow={s.slow.includes(a.ext)} tags />)}
       <details><summary>Every question in this session</summary>
         {r.answers.map(a => <Review a={a} q={byExt.get(a.ext)!} slow={s.slow.includes(a.ext)} />)}
       </details>
     </div></div>);
 }
 
-function Review({ a, q, slow }: { a: Answer; q: Question; slow: boolean }) {
+function WhySplit({ answers }: { answers: Answer[] }) {
+  const split = tagSplit(answers), total = Object.values(split).reduce((p, c) => p + c, 0);
+  if (!total) return null;
+  return <p class="note" style="margin:10px 0"><b>Why you missed:</b> {TAGS.filter(t => split[t]).map(t => `${TAG_LABEL[t]} ${split[t]}`).join(', ')}.</p>;
+}
+
+function Review({ a, q, slow, tags }: { a: Answer; q: Question; slow: boolean; tags?: boolean }) {
   if (!q) return null;
   return (
     <div class={'revq' + (a.ok ? '' : ' bad')}>
@@ -81,5 +90,9 @@ function Review({ a, q, slow }: { a: Answer; q: Question; slow: boolean }) {
       <div class="stem" dangerouslySetInnerHTML={{ __html: q.stem }} />
       {q.type === 'mcq' && <ol type="A" style="margin:0 0 6px">{q.opts.map(o => <li dangerouslySetInnerHTML={{ __html: o }} />)}</ol>}
       <details><summary>Explanation</summary><div class="rat" dangerouslySetInnerHTML={{ __html: q.rat }} /></details>
+      {tags && !a.ok && <div class="tags" role="group" aria-label="Why did you miss this?">
+        {TAGS.map(t => <button type="button" class="chip" aria-pressed={a.tag === t}
+          onClick={() => tagAnswer(a.at, a.ext, a.tag === t ? null : t)}>{TAG_LABEL[t]}</button>)}
+      </div>}
     </div>);
 }

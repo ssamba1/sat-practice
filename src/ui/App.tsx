@@ -4,6 +4,7 @@ import { Menu } from './Menu';
 import { SessionView } from './SessionView';
 import { Results } from './Results';
 import { VocabDrill } from './Vocab';
+import { SkillMap } from './SkillMap';
 import { loadBundleFile } from './data';
 
 export function App() {
@@ -24,6 +25,7 @@ export function App() {
       {s === 'session' && <SessionView />}
       {s === 'results' && <Results />}
       {s === 'vocab' && <VocabDrill />}
+      {s === 'skills' && <SkillMap />}
       {loading.value && <Loading />}
       {fatal.value && (
         <div class="navpop" role="alertdialog" aria-modal="true" aria-label="Problem">

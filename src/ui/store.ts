@@ -10,11 +10,13 @@ import {
   type Session, type Stage,
 } from '../session/machine';
 import { snapshot, restore, peek } from '../session/resume';
+import { buildToday } from '../trainer/today';
+import { setTag, type Tag } from '../trainer/tags';
 
 export const idb = new Idb();
 const SESSION_KEY = 'sat-remake.session';
 
-export type Screen = 'boot' | 'error' | 'menu' | 'session' | 'results' | 'vocab' | 'import';
+export type Screen = 'boot' | 'error' | 'menu' | 'session' | 'results' | 'vocab' | 'skills';
 export interface Result {
   answers: Answer[]; record: SessionRecord; budgetMs: number | null; qs: Question[];
   added: number; cleared: number; mode: Mode;
@@ -139,13 +141,13 @@ function begin(s: Session) {
 export const startFull = () => okToReplace() && begin(startSession('full', false, fullTestPlan(), Date.now()));
 export const startModule = (sec: Section) => okToReplace() && begin(startSession('module', false, modulePlan(sec), Date.now()));
 
-export async function startDrill(mode: Mode, metas: Meta[], mins: number | null, label: string, tutor: boolean) {
+export async function startDrill(mode: Mode, metas: Meta[], mins: number | null, label: string, tutor: boolean, soft = false) {
   if (!metas.length) { notice.value = 'No questions match that selection.'; return; }
   if (!okToReplace()) return;
   try {
     const qs = await getQs(metas);
     markSeen(metas);
-    begin(startSession(mode, tutor, drillPlan(qs, mins, label), Date.now()));
+    begin(startSession(mode, tutor, drillPlan(qs, mins, label, soft), Date.now()));
   } catch (e) { notice.value = netMessage(e); }
 }
 
@@ -162,6 +164,18 @@ export function mistakeMetas(limit: number): Meta[] {
   return [...due, ...rest].map(e => byExt.get(e)).filter((m): m is Meta => !!m).slice(0, limit);
 }
 export const startMistakes = (n: number, tutor: boolean) => startDrill('mistakes', mistakeMetas(n), null, 'Your mistakes', tutor);
+
+export function startToday(mins: number) {
+  if (!index.value) return;
+  const { metas } = buildToday(index.value, state.value, mins, Date.now());
+  startDrill('today', metas, mins, 'Today', state.value.settings.todayTutor, true);
+}
+
+/** Tag one answer, in the saved log and in the results on screen. */
+export function tagAnswer(at: number, ext: string, tag: Tag | null) {
+  update(s => ({ ...s, answers: setTag(s.answers, at, ext, tag) }));
+  if (result.value) result.value = { ...result.value, answers: setTag(result.value.answers, at, ext, tag) };
+}
 
 export function startRetry(exts: string[], tutor: boolean) {
   const byExt = metaByExt();
