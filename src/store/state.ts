@@ -41,7 +41,9 @@ export function migrate(raw: unknown): AppState {
   const s = isObj(raw.settings) ? raw.settings : {};
   return {
     v: 1,
-    answers: arr(raw.answers, a => isObj(a) && typeof a.qid === 'string' && typeof a.ok === 'boolean'),
+    // the trainer reads skill, diff, time and ms from every answer, so a malformed one is dropped
+    answers: arr(raw.answers, a => isObj(a) && typeof a.qid === 'string' && typeof a.ok === 'boolean' && typeof a.skill === 'string'
+      && ['E', 'M', 'H'].includes(a.diff) && Number.isFinite(a.at) && Number.isFinite(a.ms)),
     sessions: arr(raw.sessions, r => isObj(r) && typeof r.total === 'number'),
     seen: arr(raw.seen, x => typeof x === 'string'),
     review: dict(raw.review, r => isObj(r) && typeof r.due === 'number' && Array.isArray(r.okDays)),

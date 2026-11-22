@@ -76,7 +76,8 @@ export function setStageQs(s: Session, qs: Question[]): Session {
 export function tick(s: Session, now: number): Session {
   if (s.view === 'results' || needsQs(s)) return s;
   let n: Session = { ...s };
-  if (s.on && s.view === 'q' && s.time[s.on[0]]) n.time = put(s.time, s.on[0], s.on[1], s.time[s.on[0]][s.on[1]] + now - s.on[2]);
+  // a checked question is done: time spent reading its explanation is not answer time
+  if (s.on && s.view === 'q' && s.time[s.on[0]] && !s.checked[s.on[0]]?.[s.on[1]]) n.time = put(s.time, s.on[0], s.on[1], s.time[s.on[0]][s.on[1]] + now - s.on[2]);
   n.on = s.view === 'q' ? [s.stage, s.idx, now] : null;
   if (n.remainingMs != null) {
     if (n.clockAt != null) n.remainingMs = Math.max(0, n.remainingMs - (now - n.clockAt));

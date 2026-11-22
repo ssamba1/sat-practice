@@ -31,6 +31,7 @@ export function skillStats(answers: Answer[], index: Index, noActive: boolean, n
   for (const a of answers) {
     const s = by.get(a.skill.trim().toLowerCase());
     if (!s) continue;   // a skill College Board has since dropped
+    if (a.resp == null || a.resp === '') continue;   // never answered: says nothing about the skill
     const w = 0.5 ** (Math.max(0, now - a.at) / 864e5 / HALF_LIFE_DAYS) * (DIFF_WEIGHT[a.diff] ?? 1);
     s.n++; s.w += w; if (a.ok) s.wOk += w;
     if (a.timed) { s.timedN++; s.timedMs += a.ms; }
