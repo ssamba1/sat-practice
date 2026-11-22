@@ -69,3 +69,17 @@ describe('Important 5: a second tab does not overwrite history', () => {
     expect(store.state.value.sessions.map(r => r.id)).toEqual(['B', 'A']);
   });
 });
+
+describe('restoring a backup file', () => {
+  it('says the file could not be read when reading fails, not that it is invalid JSON', async () => {
+    const { restoreFile } = await import('../../src/ui/data');
+    const file = { text: () => Promise.reject(new DOMException('locked', 'NotReadableError')) } as unknown as File;
+    await restoreFile(file);
+    expect(store.notice.value).toMatch(/could not be read/);
+  });
+  it('still reports a file that is not JSON', async () => {
+    const { restoreFile } = await import('../../src/ui/data');
+    await restoreFile(new File(['nope'], 'x.json'));
+    expect(store.notice.value).toMatch(/not valid JSON/);
+  });
+});

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 import { mockBank } from './fixtures';
 
@@ -80,10 +81,11 @@ test('mistakes, vocab and a backup round trip', async ({ page }) => {
   const dl = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download backup' }).click();
   const path = await (await dl).path();
+  const buffer = readFileSync(path!);   // bytes, not the path: Edge can still hold a lock on its fresh download
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(page.getByText(/Questions you miss land here/)).toBeVisible();
-  await page.locator('input[type=file]').setInputFiles(path!);
+  await page.locator('input[type=file]').setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer });
   await expect(page.getByText(/22 in total/)).toBeVisible();
 });
 

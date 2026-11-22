@@ -23,13 +23,14 @@ export function downloadBackup() {
   a.href = URL.createObjectURL(blob);
   a.download = `sat-practice-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);   // a slow device may fetch the blob late
 }
 
 /** Accepts this app's backup (replaces everything) or a ModuleDrill backup (merged in). */
 export async function restoreFile(file: File) {
-  let json: unknown;
-  try { json = JSON.parse(await file.text()); } catch { notice.value = 'That file is not a backup (it is not valid JSON).'; return; }
+  let text: string, json: unknown;
+  try { text = await file.text(); } catch { notice.value = 'That file could not be read. Close anything that has it open and try again.'; return; }
+  try { json = JSON.parse(text); } catch { notice.value = 'That file is not a backup (it is not valid JSON).'; return; }
   const md = importModuleDrill(json, Date.now());
   if (!(md instanceof Error)) {
     const ok = confirm(`Import from ModuleDrill?\n\nThis adds: ${md.report.join(', ')}.\n\nYour skill map starts fresh: ModuleDrill did not keep per-question results. Nothing you already have here is removed.`);

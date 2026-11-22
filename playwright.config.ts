@@ -3,6 +3,8 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 60000,
+  // mocked question loads take up to ~4.3 s under parallel workers (measured); 5 s was flaky
+  expect: { timeout: 15000 },
   use: { baseURL: 'http://localhost:5181', channel: 'msedge' },
   webServer: { command: 'npx vite --port 5181 --strictPort', port: 5181, reuseExistingServer: true },
   projects: [
