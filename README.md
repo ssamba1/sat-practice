@@ -27,4 +27,22 @@ npm install
 npm run dev
 ```
 
-`npm test` runs the unit tests, `npm run e2e` the browser tests.
+`npm test` runs the unit tests. `npm run e2e` runs the browser tests in Microsoft Edge
+(`channel: 'msedge'` in `playwright.config.ts`) against synthetic questions, so they never touch
+College Board.
+
+## If the API goes away
+
+`python3 scripts/refresh_questions.py questions.js` downloads the whole bank into a bundle the
+error screen can load. Never commit it. (The script also writes a `gridins.js` next to itself;
+the app reads `src/data/gridins.ts` instead.)
+
+## What release 1 covers
+
+Everything ModuleDrill does (see `docs/parity-checklist.md`), plus a phone layout, dark mode and
+ModuleDrill backup import. One intended difference: a missed question leaves the mistakes list
+only after you answer it correctly on two different days.
+
+Known limits: Module 2 routing is an approximation (60% or more on Module 1 routes to the harder
+set). Highlighting uses mouse selection, so it does not yet work with touch selection on phones.
+The calculator is Desmos's site and needs a connection.

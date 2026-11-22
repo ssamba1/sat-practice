@@ -233,7 +233,9 @@ details summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var
 }
 @media (max-width: 430px) {
   header.bar { grid-template-columns: auto 1fr auto; gap: 6px; padding: 8px 10px 4px }
-  .hleft { font-size: 13px } .hleft small { display: none }
+  .hleft { font-size: 13px }
+  /* the Module 2 route stays visible on phones, clamped to two lines */
+  .hleft small { font-size: 11px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
   .hright { gap: 8px; min-width: 0 }
   .tool { font-size: 0; padding: 4px } .tool .ic { font-size: 18px }
   .timer { font-size: 19px } .timerwrap { min-width: 0 }

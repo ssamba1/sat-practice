@@ -14,8 +14,8 @@ const fmt = (ms: number) => {
   return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
 };
 const ROUTE: Record<string, string> = {
-  m2hard: 'Harder Module 2. Routing is an approximation: 60% or more on Module 1.',
-  m2easy: 'Easier Module 2. Routing is an approximation: below 60% on Module 1.',
+  m2hard: 'Harder Module 2 (approximate routing: 60%+ on Module 1)',
+  m2easy: 'Easier Module 2 (approximate routing: under 60% on Module 1)',
 };
 
 export function SessionView() {
