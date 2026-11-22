@@ -6,7 +6,7 @@ import type { Answer, Mode, SessionRecord } from '../store/state';
 
 export type Route = 'm1' | 'm2hard' | 'm2easy';
 export type Stage =
-  | { kind: 'module'; sec: Section; label: string; mins: number | null; route?: Route; qs: Question[] | null }
+  | { kind: 'module'; sec: Section; label: string; mins: number | null; route?: Route; qs: Question[] | null; soft?: boolean }
   | { kind: 'break'; label: string; mins: number };
 export type Resp = number | string | null;
 export interface Hl { sti: string | null; stem: string | null }
@@ -33,8 +33,9 @@ export const fullTestPlan = (): Stage[] => [
   mod('math', 'Math, Module 2'),
 ];
 export const modulePlan = (sec: Section): Stage[] => [mod(sec, SPEC[sec].name + ' module', 'm1')];
-export const drillPlan = (qs: Question[], mins: number | null, label = 'Drill'): Stage[] =>
-  [mod(qs.length ? secOf(qs[0].dom) : 'math', label, undefined, qs, mins)];
+/** `soft`: the clock counts down and shows, but running out does not end anything (Today). */
+export const drillPlan = (qs: Question[], mins: number | null, label = 'Drill', soft = false): Stage[] =>
+  [{ ...mod(qs.length ? secOf(qs[0].dom) : 'math', label, undefined, qs, mins), ...(soft ? { soft: true } : {}) } as Stage];
 
 export const currentStage = (s: Session) => s.stages[s.stage];
 export const currentQs = (s: Session) => { const st = currentStage(s); return st?.kind === 'module' ? st.qs : null; };
@@ -80,7 +81,8 @@ export function tick(s: Session, now: number): Session {
   if (n.remainingMs != null) {
     if (n.clockAt != null) n.remainingMs = Math.max(0, n.remainingMs - (now - n.clockAt));
     n.clockAt = now;
-    if (n.remainingMs <= 0 && !n.expired) {
+    const st = currentStage(n);
+    if (n.remainingMs <= 0 && !n.expired && !(st.kind === 'module' && st.soft)) {
       n.expired = true;
       if (n.view === 'break') return submitModule(n, now);
       n = { ...n, view: 'review', on: null };
@@ -140,11 +142,12 @@ export function finish(s: Session, now: number): { answers: Answer[]; record: Se
     if (st.kind !== 'module' || !st.qs) return;
     st.qs.forEach((q, j) => answers.push({
       qid: q.id, ext: q.ext, sec: secOf(q.dom), dom: q.dom, skill: q.skill, diff: q.diff,
-      resp: t.resp[i][j] ?? null, ok: isCorrect(q, t.resp[i][j] ?? null), ms: t.time[i][j] || 0, mode: t.mode, at: now,
+      resp: t.resp[i][j] ?? null, ok: isCorrect(q, t.resp[i][j] ?? null), ms: t.time[i][j] || 0, mode: t.mode, at: now, timed: st.mins != null,
     }));
   });
   const doms: Record<string, [number, number]> = {};
   for (const a of answers) { const r = doms[DOMNAME[a.dom] ?? a.dom] ||= [0, 0]; r[1]++; if (a.ok) r[0]++; }
   const label = t.stages.filter(x => x.kind === 'module').map(x => x.label).join(' + ');
-  return { answers, record: { id: String(now), at: now, label, correct: answers.filter(a => a.ok).length, total: answers.length, doms } };
+  return { answers, record: { id: String(now), at: now, label, correct: answers.filter(a => a.ok).length, total: answers.length, doms,
+    mode: t.mode, ms: answers.reduce((p, a) => p + a.ms, 0) } };
 }

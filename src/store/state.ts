@@ -5,13 +5,17 @@ export type Mode = 'full' | 'module' | 'custom' | 'mistakes' | 'retry' | 'today'
 export interface Answer {
   qid: string; ext: string; sec: Section; dom: string; skill: string; diff: Diff;
   resp: number | string | null; ok: boolean; ms: number; mode: Mode; at: number; tag?: string;
+  timed?: boolean;   // the stage had a clock; missing on answers from before release 2
 }
 export interface SessionRecord {
   id: string; at: number; label: string; correct: number; total: number;
-  doms: Record<string, [number, number]>; legacy?: true;
+  doms: Record<string, [number, number]>; legacy?: true; mode?: Mode; ms?: number;
 }
 export interface CalcPos { x: number; y: number; w: number; h: number }
-export interface Settings { noActive: boolean; tutor: boolean; theme: 'system' | 'light' | 'dark'; calc?: CalcPos }
+export interface Settings {
+  noActive: boolean; tutor: boolean; theme: 'system' | 'light' | 'dark'; calc?: CalcPos;
+  todayTutor: boolean; goal?: { testDate?: string };
+}
 export interface AppState {
   v: 1; answers: Answer[]; sessions: SessionRecord[]; seen: string[];
   review: Record<string, ReviewItem>; vocab: Record<string, [number, number]>; settings: Settings;
@@ -21,7 +25,7 @@ export const STATE_KEY = 'sat-remake.state';
 
 export const defaultState = (): AppState => ({
   v: 1, answers: [], sessions: [], seen: [], review: {}, vocab: {},
-  settings: { noActive: true, tutor: false, theme: 'system' },
+  settings: { noActive: true, tutor: false, theme: 'system', todayTutor: true },
 });
 
 const isObj = (x: unknown): x is Record<string, any> => typeof x === 'object' && x !== null && !Array.isArray(x);
@@ -46,7 +50,9 @@ export function migrate(raw: unknown): AppState {
       noActive: typeof s.noActive === 'boolean' ? s.noActive : d.settings.noActive,
       tutor: typeof s.tutor === 'boolean' ? s.tutor : d.settings.tutor,
       theme: ['system', 'light', 'dark'].includes(s.theme) ? s.theme : d.settings.theme,
+      todayTutor: typeof s.todayTutor === 'boolean' ? s.todayTutor : d.settings.todayTutor,
       ...(isObj(s.calc) ? { calc: s.calc as CalcPos } : {}),
+      ...(isObj(s.goal) && typeof s.goal.testDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.goal.testDate) ? { goal: { testDate: s.goal.testDate } } : {}),
     },
   };
 }
