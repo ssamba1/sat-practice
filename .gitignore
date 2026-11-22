@@ -1,0 +1,6 @@
+.superpowers/
+node_modules/
+dist/
+questions.js
+test-results/
+playwright-report/
