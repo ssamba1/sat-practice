@@ -1,2 +1,7 @@
 import { render } from 'preact';
-render(<p>Loading</p>, document.getElementById('app')!);
+import './ui/theme.css';
+import { App } from './ui/App';
+import { boot } from './ui/store';
+
+render(<App />, document.getElementById('app')!);
+boot();

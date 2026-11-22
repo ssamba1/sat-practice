@@ -15,7 +15,8 @@ export function peek(json: string | null): { at: number; label: string } | null 
   try {
     const r = JSON.parse(json || 'null');
     if (!r || r.v !== SCHEMA || r.view === 'results') return null;
-    return { at: r.at, label: r.stages.filter((x: any) => x.kind === 'module').map((x: any) => x.label).join(' + ') };
+    const label = r.mode === 'full' ? 'Full-length test' : r.stages.filter((x: any) => x.kind === 'module').map((x: any) => x.label).join(' + ');
+    return { at: r.at, label };
   } catch { return null; }
 }
 

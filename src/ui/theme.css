@@ -69,8 +69,9 @@ mark.hl { background: var(--hl); color: inherit; cursor: pointer; border-radius:
 .stim table, .stem table, .rat table { border-collapse: collapse; margin: 12px 0; font-size: 15px }
 .stim td, .stim th, .stem td, .stem th, .rat td, .rat th { border: 1px solid var(--line); padding: 5px 10px; text-align: center }
 .stim img, .stem img, .stim svg, .stem svg { max-width: 100%; height: auto; display: block; margin: 12px auto }
-:root[data-theme="dark"] .stim img, :root[data-theme="dark"] .stem img { background: #fff; border-radius: 4px }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .stim img, :root:not([data-theme="light"]) .stem img { background: #fff; border-radius: 4px } }
+/* figures are drawn for white paper: keep them on white in dark mode */
+:root[data-theme="dark"] :is(.stim, .stem) :is(img, svg) { background: #fff; border-radius: 4px; padding: 4px }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.stim, .stem) :is(img, svg) { background: #fff; border-radius: 4px; padding: 4px } }
 .stim figure, .stem figure { margin: 12px 0 }
 
 .opts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px }
@@ -182,8 +183,8 @@ input[type=number] { width: 74px; padding: 5px 7px; border: 1.5px solid var(--li
 table.brk { width: 100%; border-collapse: collapse; font-size: 14.5px; margin-top: 8px }
 table.brk th, table.brk td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line2) }
 table.brk th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em }
-.bar { height: 7px; background: var(--line2); border-radius: 4px; overflow: hidden; width: 110px; display: inline-block; vertical-align: middle }
-.bar i { display: block; height: 100%; background: var(--blue) }
+.meter { height: 7px; background: var(--line2); border-radius: 4px; overflow: hidden; width: 110px; display: inline-block; vertical-align: middle }
+.meter i { display: block; height: 100%; background: var(--blue) }
 .revq { border: 1.5px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 14px }
 .revq.bad { border-color: var(--warn) }
 .revq .tag { font-size: 12px; color: var(--muted); margin-bottom: 9px; display: flex; gap: 12px; flex-wrap: wrap }

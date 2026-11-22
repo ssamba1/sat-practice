@@ -67,7 +67,8 @@ async function getQs(metas: Meta[], msg = 'Loading questions'): Promise<Question
   loading.value = { msg, done: 0, total: metas.length };
   try {
     const { qs, drift } = await hydrate(metas, idb, (done, total) => { loading.value = { msg, done, total }; });
-    if (drift && index.value) idb.put('meta', 'index', { ts: Date.now(), data: index.value });
+    // keep the stored timestamp: a bundle's index must stay stale so the live bank wins later
+    if (drift && index.value) { const c = await idb.get('meta', 'index'); idb.put('meta', 'index', { ts: c?.ts ?? 0, data: index.value }); }
     return qs;
   } finally { loading.value = null; }
 }
@@ -171,6 +172,7 @@ function complete(s: Session) {
 }
 
 export function exitSession() {
+  if (session.value) persist(session.value);
   fatal.value = null; session.value = null; screen.value = 'menu';
 }
 export function discardSaved() {
@@ -195,6 +197,8 @@ export async function resumeSaved() {
     begin(r.session);
   } catch (e) { notice.value = netMessage(e); }
 }
+
+addEventListener('pagehide', () => { if (session.value) persist(session.value); });
 
 // one clock for everything; tick() is a no-op outside a running question view
 setInterval(() => { if (session.value && screen.value === 'session') act(tick); }, 250);
