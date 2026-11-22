@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { req, pooled } from '../../src/api/http';
-import { fetchIndex, normalise, API } from '../../src/api/questions';
+import { fetchIndex, normalise, API, BODY_SCHEMA } from '../../src/api/questions';
 
 afterEach(() => vi.unstubAllGlobals());
 const ok = (v: unknown) => ({ ok: true, json: async () => v });
@@ -59,6 +59,6 @@ describe('fetchIndex', () => {
 describe('normalise', () => {
   it('produces a body with defaults', () => {
     expect(normalise({ stem: 's', answerOptions: [{ content: 'a' }], correct_answer: ['A'] }))
-      .toEqual({ v: 2, type: 'mcq', sti: '', stem: 's', opts: ['a'], ans: ['A'], rat: '' });
+      .toEqual({ v: BODY_SCHEMA, type: 'mcq', sti: '', stem: 's', opts: ['a'], ans: ['A'], rat: '' });
   });
 });

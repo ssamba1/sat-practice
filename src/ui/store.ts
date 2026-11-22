@@ -1,7 +1,7 @@
 import { signal } from '@preact/signals';
 import { fetchIndex, hydrate, type Index, type Meta, type Question, type Section, type Diff } from '../api/questions';
 import { Idb, loadIndex } from '../store/idb';
-import { loadState, saveState, type AppState, type Mode, type Answer, type SessionRecord } from '../store/state';
+import { loadState, saveState, migrate, STATE_KEY, type AppState, type Mode, type Answer, type SessionRecord } from '../store/state';
 import { buildModule, buildCustom } from '../bank/build';
 import { MIX } from '../bank/spec';
 import { applyAnswers, dueItems } from '../review/schedule';
@@ -33,9 +33,26 @@ export const loading = signal<{ msg: string; done: number; total: number } | nul
 export const notice = signal<string | null>(null);
 export const fatal = signal<{ msg: string; retry: () => void } | null>(null);
 
-export function update(fn: (s: AppState) => AppState) {
-  state.value = fn(state.value);
-  storageWarn.value = !saveState(state.value).ok;
+/** What is saved right now, which another tab may have changed. Null when unreadable. */
+function stored(): AppState | null {
+  try { const raw = localStorage.getItem(STATE_KEY); return raw ? migrate(JSON.parse(raw)) : null; } catch { return null; }
+}
+
+/** Apply a change on top of the saved state, so two open tabs add to each other's history
+ *  instead of overwriting it. After a failed save, memory is newer than storage, so it wins. */
+export function update(fn: (s: AppState) => AppState): boolean {
+  const base = storageWarn.value ? state.value : stored() ?? state.value;
+  state.value = fn(base);
+  const ok = saveState(state.value).ok;
+  storageWarn.value = !ok;
+  return ok;
+}
+addEventListener('storage', e => { if (e.key === STATE_KEY && !storageWarn.value) state.value = loadState(); });
+
+/** Starting something new replaces a saved session; ask first. */
+function okToReplace() {
+  const saved = savedSession();
+  return !saved || confirm(`Start something new? This replaces your saved session (${saved.label}) and its answers are not kept.`);
 }
 
 export const netMessage = (e: unknown) => {
@@ -90,7 +107,8 @@ export function act(fn: (s: Session, now: number) => Session) {
   const next = fn(cur, Date.now());
   if (next === cur) return;
   session.value = next;
-  if (fn !== tick || ++ticks % 20 === 0) persist(next);
+  // a results-view snapshot is never resumable, so complete() decides what happens to it
+  if (next.view !== 'results' && (fn !== tick || ++ticks % 20 === 0)) persist(next);
   if (next.view === 'results') complete(next);
   else if (needsQs(next) && !loading.value) fillStage();
 }
@@ -98,7 +116,9 @@ export function act(fn: (s: Session, now: number) => Session) {
 async function fillStage() {
   const s = session.value, st = s && currentStage(s);
   if (!s || !st || st.kind !== 'module' || st.qs || !index.value) return;
-  const built = buildModule(index.value, st.sec, MIX[st.route ?? 'm1'], opts());
+  // never repeat a question already in this session, even once the unseen pool runs out
+  const exclude = new Set(s.stages.flatMap(x => x.kind === 'module' && x.qs ? x.qs.map(q => q.id) : []));
+  const built = buildModule(index.value, st.sec, MIX[st.route ?? 'm1'], { ...opts(), exclude });
   if (!built.qs.length) { fatal.value = { msg: 'There are no questions left to build this module from.', retry: exitSession }; return; }
   try {
     const qs = await getQs(built.qs, `Loading ${st.label}`);
@@ -116,11 +136,12 @@ function begin(s: Session) {
   if (needsQs(s)) fillStage(); else persist(s);
 }
 
-export const startFull = () => begin(startSession('full', false, fullTestPlan(), Date.now()));
-export const startModule = (sec: Section) => begin(startSession('module', false, modulePlan(sec), Date.now()));
+export const startFull = () => okToReplace() && begin(startSession('full', false, fullTestPlan(), Date.now()));
+export const startModule = (sec: Section) => okToReplace() && begin(startSession('module', false, modulePlan(sec), Date.now()));
 
 export async function startDrill(mode: Mode, metas: Meta[], mins: number | null, label: string, tutor: boolean) {
   if (!metas.length) { notice.value = 'No questions match that selection.'; return; }
+  if (!okToReplace()) return;
   try {
     const qs = await getQs(metas);
     markSeen(metas);
@@ -160,12 +181,18 @@ function complete(s: Session) {
   const mins = totalMins(s.stages);
   const budgetMs = mins == null || !answers.length ? null : mins * 60000 / answers.length;
   let added = 0, cleared = 0;
-  update(st => {
+  // drop the snapshot first: it frees space for the results
+  try { localStorage.removeItem(SESSION_KEY); } catch { /* storage blocked */ }
+  const saved = update(st => {
     const r = applyAnswers(st.review, answers, now);
     added = r.added; cleared = r.cleared;
     return { ...st, answers: [...st.answers, ...answers], sessions: [record, ...st.sessions], review: r.review };
   });
-  try { localStorage.removeItem(SESSION_KEY); } catch { /* storage blocked */ }
+  if (!saved) {
+    // keep a resumable copy on the review page so the answers are not lost on reload
+    persist({ ...s, view: 'review' });
+    notice.value = 'Your browser would not save these results. Download a backup from the menu before closing this tab.';
+  }
   result.value = { answers, record, budgetMs, qs, added, cleared, mode: s.mode };
   session.value = null;
   screen.value = 'results';

@@ -1,5 +1,6 @@
 import { req, pooled } from './http';
 import { fixMathML } from './mathml';
+import { sanitizeHtml } from './sanitize';
 import { GRIDINS } from '../data/gridins';
 
 const BASE = 'https://qbank-api.collegeboard.org/msreportingquestionbank-prod/questionbank';
@@ -21,7 +22,7 @@ export interface Body { v: number; type: QType; sti: string; stem: string; opts:
 export type Question = Meta & Body;
 export type Index = Record<Section, Meta[]>;
 
-export const BODY_SCHEMA = 2;
+export const BODY_SCHEMA = 3;   // 3: sanitized; older cached bodies are refetched
 const GRID = new Set(GRIDINS);
 
 export async function fetchIndex(): Promise<Index> {
@@ -41,15 +42,17 @@ export async function fetchIndex(): Promise<Index> {
   return out;
 }
 
+export const clean = (html: string) => sanitizeHtml(fixMathML(html));
+
 export function normalise(d: any): Body {
   return {
     v: BODY_SCHEMA,
     type: d.type || 'mcq',
-    sti: fixMathML(d.stimulus || ''),
-    stem: fixMathML(d.stem || ''),
-    opts: (d.answerOptions || []).map((o: any) => fixMathML(o.content || '')),
+    sti: clean(d.stimulus || ''),
+    stem: clean(d.stem || ''),
+    opts: (d.answerOptions || []).map((o: any) => clean(o.content || '')),
     ans: d.correct_answer || [],
-    rat: fixMathML(d.rationale || ''),
+    rat: clean(d.rationale || ''),
   };
 }
 

@@ -1,5 +1,5 @@
 import { useEffect } from 'preact/hooks';
-import { screen, state, storageWarn, notice, fatal, loading, bootMsg, bootError, boot, indexStale } from './store';
+import { screen, state, storageWarn, notice, fatal, loading, bootMsg, bootError, boot, indexStale, session, exitSession } from './store';
 import { Menu } from './Menu';
 import { SessionView } from './SessionView';
 import { Results } from './Results';
@@ -30,6 +30,7 @@ export function App() {
           <div class="navcard"><h3>Something went wrong</h3><p>{fatal.value.msg}</p>
             <div class="btnrow" style="justify-content:center">
               <button class="navbtn" onClick={fatal.value.retry}>Try again</button>
+              {session.value && <button class="navbtn ghost" onClick={exitSession}>Save and exit</button>}
             </div></div>
         </div>)}
       {notice.value && (

@@ -13,7 +13,7 @@ export const shuffle = <T>(a: T[], rng: Rng = Math.random): T[] => {
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 };
-export interface BuildOpts { noActive: boolean; seen: Set<string>; rng?: Rng }
+export interface BuildOpts { noActive: boolean; seen: Set<string>; rng?: Rng; exclude?: Set<string> }
 
 const DIFFRANK: Record<Diff, number> = { E: 0, M: 1, H: 2 };
 // College Board ships both "Cross-Text Connections" and "Cross-text Connections"
@@ -47,7 +47,7 @@ export function draw(p: Meta[], n: number, mix: Mix, seen: Set<string>, rng: Rng
 
 /** One module: blueprint domain counts, grid-in split and order. `short` when the pool could not fill it. */
 export function buildModule(index: Index, sec: Section, mix: Mix, o: BuildOpts): { qs: Meta[]; short: boolean } {
-  const spec = SPEC[sec], all = pool(index, sec, o.noActive), rng = o.rng ?? Math.random, out: Meta[] = [];
+  const spec = SPEC[sec], all = pool(index, sec, o.noActive).filter(q => !o.exclude?.has(q.id)), rng = o.rng ?? Math.random, out: Meta[] = [];
   for (const dom of spec.order) {
     const dp = all.filter(q => q.dom === dom);
     let picked: Meta[];
