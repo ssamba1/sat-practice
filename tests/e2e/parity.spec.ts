@@ -56,7 +56,7 @@ test('full test routes Module 2, breaks, and resumes after reload', async ({ pag
 test('custom drill with check-as-you-go locks the answer and shows the explanation', async ({ page }) => {
   await page.getByRole('button', { name: 'Reading and Writing', exact: true }).click();
   await page.getByRole('spinbutton', { name: 'Questions' }).fill('3');
-  await page.getByLabel(/Check each answer as I go/).check();
+  await page.getByLabel(/Check each answer as I go \(shows/).check();
   await page.getByRole('button', { name: 'Start drill' }).click();
   await page.getByRole('radio', { name: /Option A/ }).click();
   await page.getByRole('button', { name: 'Check' }).click();
