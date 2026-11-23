@@ -111,6 +111,9 @@ export function act(fn: (s: Session, now: number) => Session) {
   const next = fn(cur, Date.now());
   if (next === cur) return;
   session.value = next;
+  // only the clock moves a session on by itself: say so, or the jump looks like a glitch
+  if (fn === tick && (next.stage !== cur.stage || next.view !== cur.view))
+    notice.value = cur.view === 'break' ? 'The break is over.' : 'Time is up, so this module was submitted.';
   // a results-view snapshot is never resumable, so complete() decides what happens to it
   if (next.view !== 'results' && (fn !== tick || ++ticks % 20 === 0)) persist(next);
   if (next.view === 'results') complete(next);
@@ -123,8 +126,10 @@ async function fillStage() {
   // never repeat a question already in this session, even once the unseen pool runs out
   const exclude = new Set(s.stages.flatMap(x => x.kind === 'module' && x.qs ? x.qs.map(q => q.id) : []));
   const built = buildModule(index.value, st.sec, MIX[st.route ?? 'm1'], { ...opts(), exclude });
-  if (!built.qs.length) { fatal.value = { msg: 'There are no questions left to build this module from.', label: 'Back to menu',
-    retry: () => { fatal.value = null; session.value = null; discardSaved(); screen.value = 'menu'; } }; return; }
+  if (!built.qs.length) { fatal.value = { msg: 'There are no questions left to build this module from.', label: 'Finish here',
+    // keep what was already answered (a finished Module 1); with nothing answered, just leave
+    retry: () => { fatal.value = null; const cur = session.value!;
+      if (cur.stages.some(x => x.kind === 'module' && x.qs)) complete(cur); else { session.value = null; discardSaved(); screen.value = 'menu'; } } }; return; }
   try {
     const qs = await getQs(built.qs, `Loading ${st.label}`);
     markSeen(built.qs);

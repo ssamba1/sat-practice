@@ -20,6 +20,7 @@ export function SessionView() {
   const [hlOn, setHlOn] = useState(false);
   const [calc, setCalc] = useState(false);
   const [pop, setPop] = useState<null | 'nav' | 'ref'>(null);
+  useEffect(() => setPop(null), [s?.stage]);   // a panel from the last module never carries over
   if (!s) return null;
   const st = currentStage(s), qs = currentQs(s);
 

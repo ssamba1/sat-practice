@@ -45,3 +45,17 @@ test('the question navigator takes focus and closes with Escape, also from the r
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Question navigator' })).toHaveCount(0);
 });
+
+test('when a module runs out of time it is submitted, the student is told, and open panels close', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/');
+  page.on('dialog', d => d.accept());
+  await page.getByRole('button', { name: /^Full-length test/ }).click();
+  await expect(page.getByText('Question 1 of 27')).toBeVisible();
+  await page.getByRole('button', { name: /Question 1 of 27/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Question navigator' })).toBeVisible();
+  await page.clock.runFor('32:05');
+  await expect(page.getByRole('status')).toContainText('Time is up');
+  await expect(page.getByText(/Question 1 of \d+/)).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Question navigator' })).toHaveCount(0);
+});

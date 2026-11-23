@@ -74,7 +74,7 @@ export function setStageQs(s: Session, qs: Question[]): Session {
 /** Advance the clock and charge elapsed time to the question on screen. The first tick
  *  after a start or resume only sets the reference point, so loading and closed tabs cost nothing.
  *  When a timed module runs out it is submitted. */
-// ticks come every second; a longer gap means the laptop slept or the tab was in the background
+// the UI ticks every 250 ms; a gap over a minute means the laptop slept or the tab was in the background
 const MAX_GAP = 60000;
 
 export function tick(s: Session, now: number): Session {
