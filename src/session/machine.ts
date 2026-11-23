@@ -160,4 +160,5 @@ export const fmt = (ms: number) => {
 
 /** What the header clock shows. A soft clock (Today) never warns and says so once it runs out. */
 export const clockView = (remainingMs: number, soft: boolean) =>
-  soft && remainingMs <= 0 ? { text: "Time's up, keep going", low: false } : { text: fmt(remainingMs), low: !soft && remainingMs < 5 * 60000 };
+  soft && remainingMs <= 0 ? { text: "Time's up, keep going", low: false, over: true }
+    : { text: fmt(remainingMs), low: !soft && remainingMs < 5 * 60000, over: false };

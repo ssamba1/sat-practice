@@ -43,7 +43,7 @@ export function SessionView() {
         <div class="hleft">{st.label}<small>{route || (s.tutor ? 'Checking each answer as you go' : 'Directions apply as on test day')}</small></div>
         <div class="timerwrap">
           {s.remainingMs == null ? <div class="timer" style="font-size:15px">Untimed</div>
-            : !hideClock && clock && <div class={'timer' + (clock.low ? ' low' : '')} role="timer" aria-label="Time remaining">{clock.text}</div>}
+            : !hideClock && clock && <div class={'timer' + (clock.low ? ' low' : '') + (clock.over ? ' over' : '')} role="timer" aria-label="Time remaining">{clock.text}</div>}
           {s.remainingMs != null && <button class="tbtn" onClick={() => setHideClock(!hideClock)}>{hideClock ? 'Show' : 'Hide'}</button>}
         </div>
         <div class="hright">

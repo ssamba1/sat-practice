@@ -50,9 +50,9 @@ describe('state migration for release 2', () => {
 describe('soft clock display', () => {
   it('says time is up without warning colours once a soft clock runs out', async () => {
     const { clockView } = await import('../../src/session/machine');
-    expect(clockView(0, true)).toEqual({ text: "Time's up, keep going", low: false });
-    expect(clockView(60000, true)).toEqual({ text: '01:00', low: false });
-    expect(clockView(60000, false)).toEqual({ text: '01:00', low: true });
-    expect(clockView(6 * 60000, false)).toEqual({ text: '06:00', low: false });
+    expect(clockView(0, true)).toEqual({ text: "Time's up, keep going", low: false, over: true });
+    expect(clockView(60000, true)).toEqual({ text: '01:00', low: false, over: false });
+    expect(clockView(60000, false)).toEqual({ text: '01:00', low: true, over: false });
+    expect(clockView(6 * 60000, false)).toEqual({ text: '06:00', low: false, over: false });
   });
 });
