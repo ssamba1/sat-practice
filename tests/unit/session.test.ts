@@ -42,16 +42,6 @@ describe('timing', () => {
     expect(s.time[0]).toEqual([4000, 2000, 0]);
     expect(s.remainingMs).toBe(10 * MIN - 6000);
   });
-  it('moves to the review page once when time runs out', () => {
-    let s = startSession('module', false, modulePlan('math'), 0);
-    s = setStageQs(s, many(22));
-    s = tick(s, 0);
-    s = tick(s, 35 * MIN + 1);
-    expect(s.view).toBe('review');
-    s = goTo(s, 3, 35 * MIN + 2);   // student goes back to a question
-    s = tick(s, 35 * MIN + 500);
-    expect(s.view).toBe('q');       // expiry does not fire again
-  });
   it('an untimed drill never expires', () => {
     let s = startSession('custom', false, drillPlan(many(2), null), 0);
     s = tick(s, 0); s = tick(s, 999 * MIN);

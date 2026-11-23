@@ -65,7 +65,7 @@ export async function cacheAll() {
     await idb.put('meta', 'index', { ts: cached?.ts ?? 0, data: idx });
     notice.value = `All ${metas.length} questions are saved. The app now works offline, except the calculator.`;
   } catch (e) {
-    notice.value = netMessage(e) + ' What was saved so far is kept.';
+    notice.value = netMessage(e, 'the rest could not be fetched') + ' What was saved so far is kept.';
   } finally { loading.value = null; }
 }
 

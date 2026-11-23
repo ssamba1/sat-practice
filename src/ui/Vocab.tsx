@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks';
 import { VOCAB } from '../data/vocab';
 import { buildVocab, recordVocab, vocabProgress, BOX_MAX } from '../vocab/leitner';
 import { shuffle } from '../bank/build';
-import { screen, state, update } from './store';
+import { screen, state, update, focusOnMount } from './store';
 
 export function VocabDrill() {
   const [items] = useState(() => buildVocab(state.value.vocab));
@@ -51,7 +51,7 @@ export function VocabDrill() {
           <b>{g.w[it.wi]}</b>: {g.d[it.wi]}
           {picked !== it.wi && <><br /><b>{g.w[picked]}</b>: {g.d[picked]}</>}
         </div>
-        <button class="navbtn" autoFocus onClick={() => { setI(i + 1); setPicked(null); }}>{i + 1 < items.length ? 'Next' : 'Finish'}</button>
+        <button class="navbtn" ref={focusOnMount} onClick={() => { setI(i + 1); setPicked(null); }}>{i + 1 < items.length ? 'Next' : 'Finish'}</button>
       </>}
     </div></div>);
 }

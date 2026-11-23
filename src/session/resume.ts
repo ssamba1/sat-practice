@@ -11,10 +11,10 @@ export function snapshot(s: Session, now: number): string {
   return JSON.stringify({ ...s, v: SCHEMA, at: now, stages, on: null, clockAt: null });
 }
 
-export function peek(json: string | null): { at: number; label: string } | null {
+export function peek(json: string | null, now = Date.now()): { at: number; label: string } | null {
   try {
     const r = JSON.parse(json || 'null');
-    if (!r || r.v !== SCHEMA || r.view === 'results') return null;
+    if (!r || r.v !== SCHEMA || r.view === 'results' || !(now - r.at <= MAX_AGE)) return null;
     const label = r.mode === 'full' ? 'Full-length test' : r.stages.filter((x: any) => x.kind === 'module').map((x: any) => x.label).join(' + ');
     return { at: r.at, label };
   } catch { return null; }

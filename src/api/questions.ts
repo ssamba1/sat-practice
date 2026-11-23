@@ -24,6 +24,8 @@ export type Index = Record<Section, Meta[]>;
 
 export const BODY_SCHEMA = 3;   // 3: sanitized; older cached bodies are refetched
 const GRID = new Set(GRIDINS);
+// the trainer weights by difficulty and drops answers without one, so an unknown code is left out
+export const DIFFS = ['E', 'M', 'H'];
 
 export async function fetchIndex(): Promise<Index> {
   const look = await req<Record<string, string[]>>(API.LOOKUP);
@@ -32,9 +34,9 @@ export async function fetchIndex(): Promise<Index> {
     const p = SECREQ[sec];
     const live = new Set(look[p.live] || []);
     const rows = await req<any[]>(API.LIST, { asmtEventId: 99, test: p.test, domain: p.domain });
-    out[sec] = rows.filter(m => m.external_id).map(m => ({
+    out[sec] = rows.filter(m => m.external_id && DIFFS.includes(m.difficulty)).map(m => ({
       id: m.questionId, ext: m.external_id, dom: m.primary_class_cd, domName: m.primary_class_cd_desc,
-      skill: m.skill_desc, diff: m.difficulty, live: live.has(m.external_id) ? 1 : 0,
+      skill: String(m.skill_desc ?? ''), diff: m.difficulty, live: live.has(m.external_id) ? 1 : 0,
       // metadata has no question type: seed from the grid-in list, hydrate corrects it
       type: GRID.has(m.questionId) ? 'spr' : 'mcq',
     }));

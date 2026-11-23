@@ -1,4 +1,4 @@
-import { BODY_SCHEMA, clean, type Body, type Index, type Section } from './questions';
+import { BODY_SCHEMA, DIFFS, clean, type Body, type Index, type Section } from './questions';
 
 /** Read a questions.js made by scripts/refresh_questions.py (`window.QBANK={...};`).
  *  Bodies are stamped with the current schema so hydrate() trusts them offline. */
@@ -8,11 +8,11 @@ export function parseBundle(text: string): { index: Index; bodies: [string, Body
   if (!Array.isArray(data?.rw) || !Array.isArray(data?.math)) throw new Error('not a questions bundle');
   const index = { rw: [], math: [] } as Index, bodies: [string, Body][] = [];
   for (const sec of ['rw', 'math'] as Section[]) {
-    index[sec] = data[sec].map((q: any) => {
+    index[sec] = data[sec].filter((q: any) => DIFFS.includes(q?.diff)).map((q: any) => {
       const ext = q.ext || q.id;
       bodies.push([ext, { v: BODY_SCHEMA, type: q.type, sti: clean(q.sti || ''), stem: clean(q.stem || ''),
         opts: (q.opts || []).map((o: string) => clean(o || '')), ans: q.ans || [], rat: clean(q.rat || '') }]);
-      return { id: q.id, ext, dom: q.dom, domName: q.domName, skill: q.skill, diff: q.diff, live: q.live ? 1 : 0, type: q.type };
+      return { id: q.id, ext, dom: q.dom, domName: q.domName, skill: String(q.skill ?? ''), diff: q.diff, live: q.live ? 1 : 0, type: q.type };
     });
   }
   return { index, bodies };

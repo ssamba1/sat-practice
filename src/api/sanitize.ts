@@ -1,6 +1,6 @@
 // Question HTML comes from College Board or from a bundle file someone may have shared,
 // and it is rendered with innerHTML. Strip anything that can run code.
-const DROP = 'script,iframe,object,embed,link,meta,base,form,frame,frameset,noscript,template';
+const DROP = 'script,iframe,object,embed,link,meta,base,form,frame,frameset,noscript,template,animate,set,animateMotion,animateTransform';
 const URL_ATTR = /^(href|src|xlink:href|action|formaction|srcset)$/i;
 
 export function sanitizeHtml(html: string): string {

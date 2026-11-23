@@ -72,21 +72,25 @@ export function setStageQs(s: Session, qs: Question[]): Session {
 }
 
 /** Advance the clock and charge elapsed time to the question on screen. The first tick
- *  after a start or resume only sets the reference point, so loading and closed tabs cost nothing. */
+ *  after a start or resume only sets the reference point, so loading and closed tabs cost nothing.
+ *  When a timed module runs out it is submitted. */
+// ticks come every second; a longer gap means the laptop slept or the tab was in the background
+const MAX_GAP = 60000;
+
 export function tick(s: Session, now: number): Session {
   if (s.view === 'results' || needsQs(s)) return s;
   let n: Session = { ...s };
   // a checked question is done: time spent reading its explanation is not answer time
-  if (s.on && s.view === 'q' && s.time[s.on[0]] && !s.checked[s.on[0]]?.[s.on[1]]) n.time = put(s.time, s.on[0], s.on[1], s.time[s.on[0]][s.on[1]] + now - s.on[2]);
+  if (s.on && s.view === 'q' && s.time[s.on[0]] && !s.checked[s.on[0]]?.[s.on[1]] && now - s.on[2] <= MAX_GAP)
+    n.time = put(s.time, s.on[0], s.on[1], s.time[s.on[0]][s.on[1]] + now - s.on[2]);
   n.on = s.view === 'q' ? [s.stage, s.idx, now] : null;
   if (n.remainingMs != null) {
     if (n.clockAt != null) n.remainingMs = Math.max(0, n.remainingMs - (now - n.clockAt));
     n.clockAt = now;
     const st = currentStage(n);
     if (n.remainingMs <= 0 && !n.expired && !(st.kind === 'module' && st.soft)) {
-      n.expired = true;
-      if (n.view === 'break') return submitModule(n, now);
-      n = { ...n, view: 'review', on: null };
+      // as on test day, the module is submitted when time runs out
+      return submitModule({ ...n, expired: true }, now);
     }
   }
   return n;

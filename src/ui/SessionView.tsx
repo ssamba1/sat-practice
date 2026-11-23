@@ -5,7 +5,7 @@ import {
   answer, goTo, toReview, submitModule, toggleMark, strike, setHl, check, toggleAbc, currentStage, currentQs, secOf, fmt, clockView,
   type Session,
 } from '../session/machine';
-import { session, act, exitSession, state, update } from './store';
+import { session, act, exitSession, state, update, focusOnMount } from './store';
 import { markSelection } from './highlight';
 import { Calculator } from './Calculator';
 
@@ -116,7 +116,7 @@ function QuestionView({ s, q, hlOn }: { s: Session; q: Question; hlOn: boolean }
             <span style="text-decoration:line-through">ABC</span></button>}
         </div>
       </div>
-      <div class="stem" ref={stemRef} onMouseUp={() => onUp(stemRef.current)} onClick={onClick} dangerouslySetInnerHTML={{ __html: stem }} />
+      <div class="stem" ref={stemRef} onPointerUp={() => onUp(stemRef.current)} onClick={onClick} dangerouslySetInnerHTML={{ __html: stem }} />
       {q.type === 'spr' ? <GridIn resp={resp} locked={checked} />
         : <ul class={'opts' + (s.abc ? ' abcmode' : '')} role="radiogroup" aria-label="Answer choices">
           {q.opts.map((o, i) => (
@@ -126,6 +126,7 @@ function QuestionView({ s, q, hlOn }: { s: Session; q: Question; hlOn: boolean }
                   + (checked ? (q.ans.includes(LETTERS[i]) ? ' correct' : resp === i ? ' wrong' : '') : '')}
                 onClick={() => act(x => answer(x, resp === i ? null : i))}>
                 <span class="ltr">{LETTERS[i]}</span><span class="body" dangerouslySetInnerHTML={{ __html: o }} />
+                {struck.includes(i) && <span class="sr-only">, crossed out</span>}
               </button>
               {s.abc && <button class="strikecol" aria-label={`Cross out ${LETTERS[i]}`} aria-pressed={struck.includes(i)} onClick={() => act(x => strike(x, i))}>{LETTERS[i]}</button>}
             </li>))}
@@ -141,7 +142,7 @@ function QuestionView({ s, q, hlOn }: { s: Session; q: Question; hlOn: boolean }
   return (
     <main class={'q' + (hlOn ? ' hlon' : '')}>
       {sti ? <div class="split">
-        <div class="pane left"><div class="stim" ref={stiRef} onMouseUp={() => onUp(stiRef.current)} onClick={onClick} dangerouslySetInnerHTML={{ __html: sti }} /></div>
+        <div class="pane left"><div class="stim" ref={stiRef} onPointerUp={() => onUp(stiRef.current)} onClick={onClick} dangerouslySetInnerHTML={{ __html: sti }} /></div>
         <div class="pane right">{body}</div>
       </div> : <div class="pane solo">{body}</div>}
     </main>
@@ -178,7 +179,7 @@ function Navigator({ s, close }: { s: Session; close: () => void }) {
             aria-label={`Question ${i + 1}${s.marked[s.stage][i] ? ', marked for review' : ''}${r != null && r !== '' ? ', answered' : ''}`}
             onClick={() => { act((x, t) => goTo(x, i, t)); close(); }}>{i + 1}</button>;
         })}</div>
-        <button class="navbtn go" onClick={() => { act(toReview); close(); }}>Go to Review Page</button>
+        <button class="navbtn go" onClick={() => { act(toReview); close(); }} ref={focusOnMount}>Go to Review Page</button>
       </div>
     </div>);
 }
@@ -215,7 +216,7 @@ function Reference({ close }: { close: () => void }) {
           <p>The number of degrees of arc in a circle is 360. The number of radians of arc in a circle is 2&pi;.
             The sum of the measures in degrees of the angles of a triangle is 180.</p>
         </div>
-        <button class="navbtn go" onClick={close} autoFocus>Close</button>
+        <button class="navbtn go" onClick={close} ref={focusOnMount}>Close</button>
       </div>
     </div>);
 }
@@ -223,10 +224,10 @@ function Reference({ close }: { close: () => void }) {
 function Keys({ s, q, toggleHl, popOpen, closePop }: { s: Session; q: Question; toggleHl: () => void; popOpen: boolean; closePop: () => void }) {
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
+      if (popOpen && e.key === 'Escape') { closePop(); return; }
       if (s.view !== 'q') return;
       if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'h') { e.preventDefault(); toggleHl(); return; }
-      if (e.ctrlKey || e.metaKey || e.altKey) return;   // leave browser shortcuts alone
-      if (popOpen) { if (e.key === 'Escape') closePop(); return; }
+      if (e.ctrlKey || e.metaKey || e.altKey || popOpen) return;   // leave browser shortcuts alone
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') { if (e.key === 'Enter') (document.getElementById('next') as HTMLButtonElement)?.click(); return; }
       if (e.key === 'ArrowRight') document.getElementById('next')?.click();

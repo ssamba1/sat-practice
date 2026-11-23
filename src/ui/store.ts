@@ -33,7 +33,9 @@ export const result = signal<Result | null>(null);
 export const storageWarn = signal(false);
 export const loading = signal<{ msg: string; done: number; total: number } | null>(null);
 export const notice = signal<string | null>(null);
-export const fatal = signal<{ msg: string; retry: () => void } | null>(null);
+/** Ref that focuses a dialog's first button when it opens: Preact does not polyfill autoFocus. */
+export const focusOnMount = (el: HTMLElement | null) => el?.focus();
+export const fatal = signal<{ msg: string; retry: () => void; label?: string } | null>(null);
 
 /** What is saved right now, which another tab may have changed. Null when unreadable. */
 function stored(): AppState | null {
@@ -57,8 +59,8 @@ function okToReplace() {
   return !saved || confirm(`Start something new? This replaces your saved session (${saved.label}) and its answers are not kept.`);
 }
 
-export const netMessage = (e: unknown) => {
-  if (!navigator.onLine) return 'You appear to be offline, and there is no saved copy of the question index yet.';
+export const netMessage = (e: unknown, missing = 'there is no saved copy of the question list yet') => {
+  if (!navigator.onLine) return `You appear to be offline, and ${missing}.`;
   return `College Board's question bank did not respond (${e instanceof Error ? e.message : String(e)}).`;
 };
 
@@ -121,7 +123,8 @@ async function fillStage() {
   // never repeat a question already in this session, even once the unseen pool runs out
   const exclude = new Set(s.stages.flatMap(x => x.kind === 'module' && x.qs ? x.qs.map(q => q.id) : []));
   const built = buildModule(index.value, st.sec, MIX[st.route ?? 'm1'], { ...opts(), exclude });
-  if (!built.qs.length) { fatal.value = { msg: 'There are no questions left to build this module from.', retry: exitSession }; return; }
+  if (!built.qs.length) { fatal.value = { msg: 'There are no questions left to build this module from.', label: 'Back to menu',
+    retry: () => { fatal.value = null; session.value = null; discardSaved(); screen.value = 'menu'; } }; return; }
   try {
     const qs = await getQs(built.qs, `Loading ${st.label}`);
     markSeen(built.qs);
@@ -129,7 +132,7 @@ async function fillStage() {
     session.value = setStageQs(session.value!, qs);
     persist(session.value);
   } catch (e) {
-    fatal.value = { msg: netMessage(e), retry: () => { fatal.value = null; fillStage(); } };
+    fatal.value = { msg: netMessage(e, 'these questions are not saved on this device yet'), retry: () => { fatal.value = null; fillStage(); } };
   }
 }
 
@@ -148,7 +151,7 @@ export async function startDrill(mode: Mode, metas: Meta[], mins: number | null,
     const qs = await getQs(metas);
     markSeen(metas);
     begin(startSession(mode, tutor, drillPlan(qs, mins, label, soft), Date.now()));
-  } catch (e) { notice.value = netMessage(e); }
+  } catch (e) { notice.value = netMessage(e, 'these questions are not saved on this device yet'); }
 }
 
 export function startCustom(sec: Section, doms: string[], diffs: Diff[], n: number, skills: string[], mins: number | null, tutor: boolean) {

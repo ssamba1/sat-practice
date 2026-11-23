@@ -6,7 +6,7 @@ const isObj = (x: unknown): x is Record<string, any> => typeof x === 'object' &&
 export const backupJson = (s: AppState, now: number) => JSON.stringify({ app: 'sat-remake', v: 1, at: now, state: s });
 
 export function importBackup(json: unknown): AppState | Error {
-  if (!isObj(json) || json.app !== 'sat-remake' || !isObj(json.state)) return new Error('This is not a backup from this app.');
+  if (!isObj(json) || json.app !== 'sat-remake' || !isObj(json.state) || json.state.v !== 1) return new Error('This is not a backup from this app.');
   return migrate(json.state);
 }
 
@@ -61,7 +61,7 @@ export function mergeImported(cur: AppState, imp: Imported): AppState {
     review,
     seen: [...new Set([...cur.seen, ...(imp.seen ?? [])])],
     vocab: { ...(imp.vocab ?? {}), ...cur.vocab },
-    sessions: [...cur.sessions, ...(imp.sessions ?? [])].sort((a, b) => b.at - a.at),
-    settings: { ...cur.settings, ...(imp.settings ?? {}) },
+    // ids are stable per file, so importing the same file twice adds nothing
+    sessions: [...cur.sessions, ...(imp.sessions ?? []).filter(r => !cur.sessions.some(c => c.id === r.id))].sort((a, b) => b.at - a.at),
   };
 }

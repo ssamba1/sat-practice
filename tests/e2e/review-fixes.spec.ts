@@ -34,3 +34,14 @@ test('Important 6: a failed load mid-test can be left with Save and exit', async
   await page.getByRole('alertdialog').getByRole('button', { name: 'Save and exit' }).click();
   await expect(page.getByRole('button', { name: /^Resume: Full-length test/ })).toBeVisible();
 });
+
+test('the question navigator takes focus and closes with Escape, also from the review page', async ({ page }) => {
+  await page.getByRole('button', { name: /^Math module/ }).click();
+  await page.getByRole('button', { name: /Question 1 of 22/ }).click();
+  await expect(page.getByRole('button', { name: 'Go to Review Page' })).toBeFocused();
+  await page.getByRole('button', { name: 'Go to Review Page' }).click();
+  await page.getByRole('button', { name: /^Questions/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Question navigator' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Question navigator' })).toHaveCount(0);
+});
