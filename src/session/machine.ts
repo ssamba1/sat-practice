@@ -152,3 +152,12 @@ export function finish(s: Session, now: number): { answers: Answer[]; record: Se
   return { answers, record: { id: String(now), at: now, label, correct: answers.filter(a => a.ok).length, total: answers.length, doms,
     mode: t.mode, ms: answers.reduce((p, a) => p + a.ms, 0) } };
 }
+
+export const fmt = (ms: number) => {
+  const t = Math.max(0, Math.ceil(ms / 1000));
+  return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+};
+
+/** What the header clock shows. A soft clock (Today) never warns and says so once it runs out. */
+export const clockView = (remainingMs: number, soft: boolean) =>
+  soft && remainingMs <= 0 ? { text: "Time's up, keep going", low: false } : { text: fmt(remainingMs), low: !soft && remainingMs < 5 * 60000 };

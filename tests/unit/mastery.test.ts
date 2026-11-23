@@ -58,7 +58,7 @@ describe('skillStats', () => {
 
 describe('band', () => {
   it('maps mastery to words', () => {
-    expect([null, 0.4, 0.6, 0.8, 0.95].map(band)).toEqual(['unknown', 'weak', 'shaky', 'solid', 'strong']);
+    expect([null, 0.4, 0.6, 0.8, 0.95].map(m => band(m))).toEqual(['unknown', 'weak', 'shaky', 'solid', 'strong']);
   });
 });
 
@@ -73,5 +73,21 @@ describe('pacing', () => {
     const a = [ans('Linear equations', false, 'M', 1, 200000), ans('Linear equations', false, 'M', 1, 200000, false),
       ans('Linear equations', false, 'M', 40, 200000), ans('Linear equations', true, 'M', 1, 200000), ans('Linear equations', false, 'M', 1, 100000)];
     expect(slowMisses(a, NOW)).toHaveLength(1);
+  });
+});
+
+describe('strong needs more than easy questions', () => {
+  it('caps a skill at solid until a medium or hard question is right', () => {
+    const easy = Array.from({ length: 6 }, () => ans('Linear equations', true, 'E'));
+    const s = find(skillStats(easy, IDX, true, NOW), 'linear equations');
+    expect(s.mastery).toBe(1);
+    expect(band(s.mastery, s.easyOnly)).toBe('solid');
+    const t = find(skillStats([...easy, ans('Linear equations', true, 'M')], IDX, true, NOW), 'linear equations');
+    expect(band(t.mastery, t.easyOnly)).toBe('strong');
+  });
+  it('does not count a wrong hard answer as proof', () => {
+    const a = [...Array.from({ length: 20 }, () => ans('Linear equations', true, 'E')), ans('Linear equations', false, 'H')];
+    const s = find(skillStats(a, IDX, true, NOW), 'linear equations');
+    expect(s.easyOnly).toBe(true);
   });
 });

@@ -60,3 +60,7 @@ test('an official SAT date can be picked from the list', async ({ page }) => {
   await page.reload();
   await expect(page.getByLabel('Official SAT date')).toHaveValue(first!);
 });
+
+test('the Today card says what a session will hold', async ({ page }) => {
+  await expect(page.getByText(/A 20 min session right now: .*(skills to work on|more mixed in)/)).toBeVisible();
+});

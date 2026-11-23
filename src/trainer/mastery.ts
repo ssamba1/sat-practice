@@ -12,6 +12,8 @@ export const FORMULA = 'Mastery is your accuracy on a skill, with harder questio
 export interface SkillStat {
   key: string; label: string; sec: Section; dom: string; n: number; mastery: number | null;
   avgMs: number | null; timedN: number; budgetMs: number; tags: Record<string, number>; available: number;
+  /** No medium or hard question answered right yet: the band stops at solid. */
+  easyOnly: boolean;
 }
 
 export const budgetMs = (sec: Section) => SPEC[sec].mins * 60000 / SPEC[sec].qs;
@@ -24,7 +26,7 @@ export function skillStats(answers: Answer[], index: Index, noActive: boolean, n
       const key = skillKey(q);
       let s = by.get(key);
       if (!s) by.set(key, s = { key, label: q.skill.trim(), sec, dom: q.dom, n: 0, mastery: null, avgMs: null, timedN: 0,
-        budgetMs: budgetMs(sec), tags: {}, available: 0, w: 0, wOk: 0, timedMs: 0 });
+        budgetMs: budgetMs(sec), tags: {}, available: 0, easyOnly: true, w: 0, wOk: 0, timedMs: 0 });
       if (usable.has(q.id)) s.available++;
     }
   }
@@ -34,6 +36,7 @@ export function skillStats(answers: Answer[], index: Index, noActive: boolean, n
     if (a.resp == null || a.resp === '') continue;   // never answered: says nothing about the skill
     const w = 0.5 ** (Math.max(0, now - a.at) / 864e5 / HALF_LIFE_DAYS) * (DIFF_WEIGHT[a.diff] ?? 1);
     s.n++; s.w += w; if (a.ok) s.wOk += w;
+    if (a.ok && a.diff !== 'E') s.easyOnly = false;
     if (a.timed) { s.timedN++; s.timedMs += a.ms; }
     if (a.tag) s.tags[a.tag] = (s.tags[a.tag] ?? 0) + 1;
   }
@@ -44,7 +47,7 @@ export function skillStats(answers: Answer[], index: Index, noActive: boolean, n
   }));
 }
 
-export function band(m: number | null): 'unknown' | 'weak' | 'shaky' | 'solid' | 'strong' {
+export function band(m: number | null, easyOnly = false): 'unknown' | 'weak' | 'shaky' | 'solid' | 'strong' {
   if (m == null) return 'unknown';
-  return m < 0.5 ? 'weak' : m < 0.75 ? 'shaky' : m < 0.9 ? 'solid' : 'strong';
+  return m < 0.5 ? 'weak' : m < 0.75 ? 'shaky' : m < 0.9 || easyOnly ? 'solid' : 'strong';
 }

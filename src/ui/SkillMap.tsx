@@ -44,7 +44,7 @@ export function SkillMap() {
 }
 
 function Row({ s }: { s: SkillStat }) {
-  const b = band(s.mastery);
+  const b = band(s.mastery, s.easyOnly);
   const tags = TAGS.filter(t => s.tags[t]).map(t => `${TAG_LABEL[t as Tag]} ${s.tags[t]}`).join(', ');
   return (
     <tr>
@@ -55,7 +55,7 @@ function Row({ s }: { s: SkillStat }) {
       <td>{s.avgMs == null ? <span class="hint">{s.n ? 'untimed only' : ''}</span>
         : <span class={s.avgMs > 1.3 * s.budgetMs ? 'slowtxt' : ''}>{secs(s.avgMs)} <span class="hint">/ {secs(s.budgetMs)}</span></span>}</td>
       <td class="hint">{tags}</td>
-      <td>{s.available > 0 && <button class="linkbtn" onClick={() => startCustom(s.sec, [s.dom], ['E', 'M', 'H'], 10, [s.key], null, state.value.settings.todayTutor)}>
+      <td>{s.available > 0 && <button class="linkbtn" onClick={() => startCustom(s.sec, [s.dom], ['E', 'M', 'H'], 10, [s.key], null, state.value.settings.tutor)}>
         Drill<span class="sr-only"> {s.label}</span></button>}</td>
     </tr>);
 }

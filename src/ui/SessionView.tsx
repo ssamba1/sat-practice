@@ -2,17 +2,13 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Question } from '../api/questions';
 import { cleanGridIn, isCorrect, LETTERS } from '../score/check';
 import {
-  answer, goTo, toReview, submitModule, toggleMark, strike, setHl, check, toggleAbc, currentStage, currentQs, secOf,
+  answer, goTo, toReview, submitModule, toggleMark, strike, setHl, check, toggleAbc, currentStage, currentQs, secOf, fmt, clockView,
   type Session,
 } from '../session/machine';
 import { session, act, exitSession, state, update } from './store';
 import { markSelection } from './highlight';
 import { Calculator } from './Calculator';
 
-const fmt = (ms: number) => {
-  const t = Math.max(0, Math.ceil(ms / 1000));
-  return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
-};
 const ROUTE: Record<string, string> = {
   m2hard: 'Harder Module 2 (approximate routing: 60%+ on Module 1)',
   m2easy: 'Easier Module 2 (approximate routing: under 60% on Module 1)',
@@ -38,7 +34,7 @@ export function SessionView() {
 
   const q = qs[s.idx];
   const isMath = secOf(q.dom) === 'math';
-  const low = s.remainingMs != null && s.remainingMs < 5 * 60000;
+  const clock = s.remainingMs == null ? null : clockView(s.remainingMs, st.kind === 'module' && !!st.soft);
   const route = st.kind === 'module' && st.route ? ROUTE[st.route] : '';
 
   return (
@@ -47,7 +43,7 @@ export function SessionView() {
         <div class="hleft">{st.label}<small>{route || (s.tutor ? 'Checking each answer as you go' : 'Directions apply as on test day')}</small></div>
         <div class="timerwrap">
           {s.remainingMs == null ? <div class="timer" style="font-size:15px">Untimed</div>
-            : !hideClock && <div class={'timer' + (low ? ' low' : '')} role="timer" aria-label="Time remaining">{fmt(s.remainingMs)}</div>}
+            : !hideClock && clock && <div class={'timer' + (clock.low ? ' low' : '')} role="timer" aria-label="Time remaining">{clock.text}</div>}
           {s.remainingMs != null && <button class="tbtn" onClick={() => setHideClock(!hideClock)}>{hideClock ? 'Show' : 'Hide'}</button>}
         </div>
         <div class="hright">

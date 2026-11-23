@@ -38,7 +38,7 @@ export function buildToday(index: Index, st: AppState, mins: number, now: number
   };
   for (const s of ranked) {
     if (out.length >= weakEnd) break;
-    const b = band(s.mastery);
+    const b = band(s.mastery, s.easyOnly);
     fromSkill(s.key, b === 'weak' ? 3 : 2, DIFFS[b]);
   }
   const weak = out.length - review;
@@ -46,11 +46,22 @@ export function buildToday(index: Index, st: AppState, mins: number, now: number
   // 3. upkeep on the strongest known skills, one question each
   for (const s of [...ranked].reverse()) {
     if (out.length >= n) break;
-    if (s.mastery != null && s.mastery >= 0.75) fromSkill(s.key, 1, DIFFS[band(s.mastery)]);
+    if (s.mastery != null && s.mastery >= 0.75) fromSkill(s.key, 1, DIFFS[band(s.mastery, s.easyOnly)]);
   }
   const keep = out.length - review - weak;
 
   // 4. anything left: any usable question
   for (const q of unseenFirst(usable)) { if (out.length >= n) break; take(q); }
   return { metas: out, parts: { review, weak, keep } };
+}
+
+/** The session's make-up in words, skipping empty parts. */
+export function splitText(p: { review: number; weak: number; keep: number }, total: number) {
+  const rest = total - p.review - p.weak - p.keep;
+  return [
+    p.review && `${p.review} mistake${p.review > 1 ? 's' : ''} due for review`,
+    p.weak && `${p.weak} from skills to work on`,
+    p.keep && `${p.keep} to keep strong skills sharp`,
+    rest > 0 && `${rest} more mixed in`,
+  ].filter(Boolean).join(', ');
 }

@@ -77,3 +77,12 @@ describe('tags', () => {
     expect(setTag(log, 1, 'x', null)[0].tag).toBeUndefined();
   });
 });
+
+describe('splitText', () => {
+  it('describes each non-empty part of a session', async () => {
+    const { splitText } = await import('../../src/trainer/today');
+    expect(splitText({ review: 5, weak: 7, keep: 2 }, 14)).toBe('5 mistakes due for review, 7 from skills to work on, 2 to keep strong skills sharp');
+    expect(splitText({ review: 1, weak: 12, keep: 0 }, 14)).toBe('1 mistake due for review, 12 from skills to work on, 1 more mixed in');
+    expect(splitText({ review: 0, weak: 0, keep: 0 }, 9)).toBe('9 more mixed in');
+  });
+});

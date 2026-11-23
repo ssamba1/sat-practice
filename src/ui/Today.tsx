@@ -1,6 +1,7 @@
 import { dueItems } from '../review/schedule';
 import { skillStats, band } from '../trainer/mastery';
-import { todayCount } from '../trainer/today';
+import { todayCount, buildToday, splitText } from '../trainer/today';
+import { seeded } from '../bank/build';
 import { weekStart, daysUntil, upcomingSat } from '../trainer/goal';
 import { state, index, update, startToday, screen } from './store';
 
@@ -13,6 +14,7 @@ export function TodayCard() {
   const weak = stats.filter(s => s.available && (band(s.mastery) === 'weak' || band(s.mastery) === 'shaky'))
     .sort((a, b) => (a.mastery ?? 0) - (b.mastery ?? 0)).slice(0, 3);
   const tried = stats.filter(s => s.mastery != null).length;
+  const plan = buildToday(index.value!, st, 20, now, seeded(1));   // the split barely depends on the seed
   return (
     <section class="today" aria-labelledby="today-h">
       <h2 id="today-h" style="margin-top:0">Today</h2>
@@ -25,6 +27,7 @@ export function TodayCard() {
         {MINS.map(m => <button class="navbtn" onClick={() => startToday(m)}>{m} min<span class="sr-only"> session</span></button>)}
         <span class="hint" style="margin:0">{MINS.map(m => `${m} min = ${todayCount(m)} questions`).join(', ')}. The clock shows but never cuts you off.</span>
       </div>
+      {plan.metas.length > 0 && <p class="hint" style="margin:8px 0 0">A 20 min session right now: {splitText(plan.parts, plan.metas.length)}.</p>}
       <label class="row" style="margin-top:12px">
         <input type="checkbox" checked={st.settings.todayTutor}
           onChange={e => update(s => ({ ...s, settings: { ...s.settings, todayTutor: (e.target as HTMLInputElement).checked } }))} />
