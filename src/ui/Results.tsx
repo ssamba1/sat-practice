@@ -5,9 +5,10 @@ import type { Answer } from '../store/state';
 import type { Question } from '../api/questions';
 import { result, screen, startRetry, state, tagAnswer } from './store';
 import { TAGS, TAG_LABEL, tagSplit } from '../trainer/tags';
+import { budgetMs } from '../trainer/mastery';
 
 const pct = (ok: number, n: number) => n ? Math.round(100 * ok / n) : 0;
-const secs = (ms: number) => ms >= 60000 ? `${Math.floor(ms / 60000)}m ${Math.round(ms % 60000 / 1000)}s` : `${Math.round(ms / 1000)}s`;
+export const secs = (ms: number) => { const t = Math.round(ms / 1000); return t >= 60 ? `${Math.floor(t / 60)}m ${t % 60}s` : `${t}s`; };
 const DIFF: Record<string, string> = { E: 'Easy', M: 'Medium', H: 'Hard' };
 const showResp = (q: Question, r: Answer['resp']) => r == null || r === '' ? 'no answer' : q.type === 'mcq' ? LETTERS[r as number] : String(r);
 
@@ -25,7 +26,9 @@ function Table({ title, rows }: { title: string; rows: [string, Tally][] }) {
 export function Results() {
   const r = result.value;
   if (!r) return null;
-  const s = summarise(r.answers, r.budgetMs);
+  // a full test mixes sections with different budgets, so each question is judged by its own
+  const full = r.mode === 'full';
+  const s = summarise(r.answers, full ? a => budgetMs(a.sec) : r.budgetMs);
   const byExt = new Map(r.qs.map(q => [q.ext, q]));
   const missed = r.answers.filter(a => !a.ok);
   const tutor = state.value.settings.tutor;
@@ -45,7 +48,8 @@ export function Results() {
 
       <div class="note">
         <b>Pacing.</b>{' '}
-        {r.budgetMs != null && <>Your time limit works out to {secs(r.budgetMs)} per question. </>}
+        {full ? <>Your time limit works out to {secs(budgetMs('rw'))} per Reading and Writing question and {secs(budgetMs('math'))} per Math question. </>
+          : r.budgetMs != null && <>Your time limit works out to {secs(r.budgetMs)} per question. </>}
         {missed.length && s.correct ? <>Right answers took {secs(s.okAvgMs)} on average, wrong ones {secs(s.wrongAvgMs)}. </> : null}
         {s.slow.length ? <>{s.slow.length} question{s.slow.length > 1 ? 's' : ''} took more than twice the budget.</> : r.budgetMs != null ? 'Nothing took more than twice the budget.' : ''}
       </div>

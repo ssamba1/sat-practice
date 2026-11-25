@@ -2,7 +2,7 @@ import { dueItems } from '../review/schedule';
 import { skillStats, band } from '../trainer/mastery';
 import { todayCount, buildToday, splitText } from '../trainer/today';
 import { seeded } from '../bank/build';
-import { weekStart, daysUntil, upcomingSat } from '../trainer/goal';
+import { weekStart, daysUntil, upcomingSat, registration, type Registration } from '../trainer/goal';
 import { state, index, update, startToday, screen } from './store';
 
 const MINS = [10, 20, 40];
@@ -57,11 +57,16 @@ function Goal() {
       <label>Test date
         <input type="date" value={date ?? ''} onChange={e => setDate((e.target as HTMLInputElement).value)} /></label>
       {left != null && <span>{left > 1 ? `${left} days to go` : left === 1 ? 'Tomorrow' : left === 0 ? 'Today. Good luck.' : 'That date has passed'}</span>}
-      {official && <span class="hint" style="margin:0">{official.expected ? 'College Board has not confirmed this date yet.'
-        : daysUntil(official.register!, now) >= 0 ? `Register by ${fmt(official.register!)}.` : 'Regular registration has closed; late registration may still be open.'}</span>}
+      {official && <span class="hint" style="margin:0">{regText(registration(official, now))}</span>}
       <span class="hint" style="margin:0">This week: {week.length} Today session{week.length === 1 ? '' : 's'}, {mins} min.</span>
     </div>
   );
 }
+
+const regText = (r: Registration) =>
+  r.kind === 'expected' ? 'College Board has not confirmed this date yet.'
+    : r.kind === 'regular' ? `Register by ${fmt(r.until)}.`
+    : r.kind === 'late' ? `Regular registration has closed. Late registration (extra fee) runs until ${fmt(r.until)}.`
+    : 'Registration for this date has closed.';
 
 const fmt = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });

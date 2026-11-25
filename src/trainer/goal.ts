@@ -1,4 +1,4 @@
-import { SAT_DATES } from '../data/satdates';
+import { SAT_DATES, type SatDate } from '../data/satdates';
 
 /** Local Monday 00:00 of the week containing `now`. */
 export function weekStart(now: number) {
@@ -17,3 +17,14 @@ export function daysUntil(date: string, now: number) {
 
 /** Official SAT dates from today (local) on, soonest first. */
 export const upcomingSat = (now: number) => SAT_DATES.filter(d => daysUntil(d.date, now) >= 0);
+
+export type Registration = { kind: 'expected' | 'closed' } | { kind: 'regular' | 'late'; until: string };
+
+/** Where registration stands for an official date. shortcut: compares local calendar days, while
+ *  College Board deadlines end at 11:59 p.m. ET, so it can be off by hours far from ET. */
+export function registration(d: SatDate, now: number): Registration {
+  if (d.expected || !d.register) return { kind: 'expected' };
+  if (daysUntil(d.register, now) >= 0) return { kind: 'regular', until: d.register };
+  if (d.late && daysUntil(d.late, now) >= 0) return { kind: 'late', until: d.late };
+  return { kind: 'closed' };
+}

@@ -21,6 +21,9 @@ export function SessionView() {
   const [calc, setCalc] = useState(false);
   const [pop, setPop] = useState<null | 'nav' | 'ref'>(null);
   useEffect(() => setPop(null), [s?.stage]);   // a panel from the last module never carries over
+  const opener = useRef<HTMLElement | null>(null);
+  const openPop = (p: 'nav' | 'ref') => { opener.current = document.activeElement as HTMLElement; setPop(p); };
+  const closePop = () => { setPop(null); opener.current?.focus(); };   // back to the button that opened it
   if (!s) return null;
   const st = currentStage(s), qs = currentQs(s);
 
@@ -51,7 +54,7 @@ export function SessionView() {
           {s.view === 'q' && <button id="hlbtn" class="tool" aria-pressed={hlOn} onClick={() => setHlOn(!hlOn)} title="Highlight (Ctrl+H)">
             <span class="ic" aria-hidden="true">&#x270E;</span>Highlight</button>}
           {isMath && <button class="tool" aria-pressed={calc} onClick={() => setCalc(!calc)}><span class="ic" aria-hidden="true">&#x1F5A9;</span>Calculator</button>}
-          {isMath && <button class="tool" onClick={() => setPop('ref')}><span class="ic" aria-hidden="true">&#x2211;</span>Reference</button>}
+          {isMath && <button class="tool" onClick={() => openPop('ref')}><span class="ic" aria-hidden="true">&#x2211;</span>Reference</button>}
           <button class="tool" onClick={() => { if (confirm('Save this session and go back to the menu? You can resume it later.')) exitSession(); }}>
             <span class="ic" aria-hidden="true">&#x23CF;</span>Save and exit</button>
         </div>
@@ -61,7 +64,7 @@ export function SessionView() {
 
       <footer class="bar">
         <span class="hint" style="margin:0">{s.view === 'q' ? '' : 'Check your work'}</span>
-        <button class="qpick" onClick={() => setPop('nav')} aria-haspopup="dialog">
+        <button class="qpick" onClick={() => openPop('nav')} aria-haspopup="dialog">
           {s.view === 'review' ? 'Questions' : `Question ${s.idx + 1} of ${qs.length}`} &#x25B4;</button>
         <div class="footright">
           {s.view === 'q' ? <>
@@ -77,11 +80,11 @@ export function SessionView() {
         </div>
       </footer>
 
-      {pop === 'nav' && <Navigator s={s} close={() => setPop(null)} />}
-      {pop === 'ref' && <Reference close={() => setPop(null)} />}
+      {pop === 'nav' && <Navigator s={s} close={closePop} />}
+      {pop === 'ref' && <Reference close={closePop} />}
       {calc && isMath && <Calculator close={() => setCalc(false)} pos={state.value.settings.calc}
         onMove={calcPos => update(x => ({ ...x, settings: { ...x.settings, calc: calcPos } }))} />}
-      <Keys s={s} q={q} toggleHl={() => setHlOn(v => !v)} popOpen={!!pop} closePop={() => setPop(null)} />
+      <Keys s={s} q={q} toggleHl={() => setHlOn(v => !v)} popOpen={!!pop} closePop={closePop} />
     </>
   );
 }

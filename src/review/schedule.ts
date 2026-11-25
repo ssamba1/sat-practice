@@ -19,6 +19,8 @@ export function applyAnswers(review: Record<string, ReviewItem>, answers: Answer
   let added = 0, cleared = 0;
   for (const a of answers) {
     if (!a.ext) continue;
+    // a blank in practice was never tried; on a timed test it counts, as on test day
+    if ((a.resp == null || a.resp === '') && a.mode !== 'full' && a.mode !== 'module') continue;
     const prev = out[a.ext];
     if (!a.ok) {
       if (!prev) added++;

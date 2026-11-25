@@ -59,3 +59,17 @@ test('when a module runs out of time it is submitted, the student is told, and o
   await expect(page.getByText(/Question 1 of \d+/)).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Question navigator' })).toHaveCount(0);
 });
+
+test('closing a panel puts focus back on the button that opened it', async ({ page }) => {
+  await page.getByRole('button', { name: /^Math module/ }).click();
+  const pick = page.getByRole('button', { name: /Question 1 of 22/ });
+  await pick.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Question navigator' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(pick).toBeFocused();
+  const ref = page.getByRole('button', { name: 'Reference' });
+  await ref.click();
+  await page.getByRole('dialog', { name: 'Reference sheet' }).getByRole('button', { name: 'Close' }).click();
+  await expect(ref).toBeFocused();
+});

@@ -56,7 +56,7 @@ test('an official SAT date can be picked from the list', async ({ page }) => {
   await pick.selectOption(first!);
   await expect(page.getByLabel('Test date')).toHaveValue(first!);
   await expect(page.getByText(/days to go|Tomorrow|Today\. Good luck\./)).toBeVisible();
-  await expect(page.getByText(/Register by|College Board has not confirmed|registration has closed/)).toBeVisible();
+  await expect(page.getByText(/Register by|College Board has not confirmed|Late registration \(extra fee\) runs until|Registration for this date has closed/)).toBeVisible();
   await page.reload();
   await expect(page.getByLabel('Official SAT date')).toHaveValue(first!);
 });

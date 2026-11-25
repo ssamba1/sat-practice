@@ -5,7 +5,8 @@ const add = (t: Tally | undefined, a: Answer): Tally => ({ ok: (t?.ok ?? 0) + +a
 const mean = (xs: number[]) => xs.length ? xs.reduce((p, c) => p + c, 0) / xs.length : 0;
 
 /** Score, breakdowns and pacing for one session. `slow` lists questions over twice the budget. */
-export function summarise(answers: Answer[], budgetMs: number | null) {
+export function summarise(answers: Answer[], budgetMs: number | null | ((a: Answer) => number)) {
+  const budget = (a: Answer) => typeof budgetMs === 'function' ? budgetMs(a) : budgetMs!;
   const byDomain: Record<string, Tally> = {}, byDiff: Record<string, Tally> = {};
   const bySkill: Record<string, Tally & { label: string }> = {};
   for (const a of answers) {
@@ -20,7 +21,7 @@ export function summarise(answers: Answer[], budgetMs: number | null) {
     avgMs: mean(answers.map(a => a.ms)),
     okAvgMs: mean(answers.filter(a => a.ok).map(a => a.ms)),
     wrongAvgMs: mean(answers.filter(a => !a.ok).map(a => a.ms)),
-    slow: budgetMs == null ? [] : answers.filter(a => a.ms > 2 * budgetMs).map(a => a.ext),
+    slow: budgetMs == null ? [] : answers.filter(a => a.ms > 2 * budget(a)).map(a => a.ext),
   };
 }
 
