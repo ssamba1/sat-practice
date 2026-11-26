@@ -32,7 +32,14 @@ export function Calculator({ close, pos, onMove }: { close: () => void; pos?: Ca
 
   useEffect(() => {
     reflow(ref.current);
-    const r = () => reflow(ref.current);
+    const r = () => {
+      const el = ref.current;
+      if (el) {   // a narrower window must not leave the panel off-screen
+        const b = el.getBoundingClientRect(), n = geometry({ x: b.left, y: b.top, w: b.width, h: b.height });
+        Object.assign(el.style, { left: n.x + 'px', top: n.y + 'px', width: n.w + 'px', height: n.h + 'px' });
+      }
+      reflow(el);
+    };
     addEventListener('resize', r);
     return () => { removeEventListener('resize', r); reflow(null); };
   }, []);

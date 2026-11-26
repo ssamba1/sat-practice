@@ -86,7 +86,7 @@ test('Tab stays inside an open panel', async ({ page }) => {
   await expect(last).toBeFocused();
 });
 
-test('a saved session with a question College Board removed is kept, not deleted', async ({ page }) => {
+test('a saved session with a question College Board removed from the list is kept, not deleted', async ({ page }) => {
   page.on('dialog', d => d.accept());
   await page.getByRole('button', { name: /^Math module/ }).click();
   await expect(page.getByText('Question 1 of 22')).toBeVisible();
@@ -97,7 +97,22 @@ test('a saved session with a question College Board removed is kept, not deleted
     localStorage.setItem('sat-remake.session', JSON.stringify(s));
   });
   await page.getByRole('button', { name: /^Resume:/ }).click();
-  await expect(page.getByText(/no longer in College Board's question bank/)).toBeVisible();
+  await expect(page.getByText(/no longer in the question list/)).toBeVisible();
   await expect(page.getByRole('button', { name: /^Resume:/ })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('sat-remake.session'))).not.toBeNull();
+});
+
+test('the calculator stays on screen when the window gets narrower', async ({ page }) => {
+  await page.addInitScript(() => {   // before the app reads storage
+    const s = JSON.parse(localStorage.getItem('sat-remake.state') || '{}');
+    s.v = 1; s.settings = { ...(s.settings || {}), calc: { x: 700, y: 90, w: 520, h: 560 } };
+    localStorage.setItem('sat-remake.state', JSON.stringify(s));
+  });
+  await page.reload();
+  await page.getByRole('button', { name: /^Math module/ }).click();
+  await page.getByRole('button', { name: 'Calculator' }).click();
+  const panel = page.getByRole('dialog', { name: 'Calculator' });
+  await expect(panel).toBeVisible();
+  await page.setViewportSize({ width: 800, height: 700 });
+  await expect.poll(async () => { const b = (await panel.boundingBox())!; return b.x >= 0 && b.x + b.width <= 800; }).toBe(true);
 });

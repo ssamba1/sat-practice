@@ -1,8 +1,7 @@
 import { parseBundle } from '../api/bundle';
 import { hydrate, type Meta } from '../api/questions';
 import { backupJson, importBackup, importModuleDrill, mergeImported } from '../store/backup';
-import { saveState } from '../store/state';
-import { idb, index, screen, state, update, notice, loading, netMessage } from './store';
+import { idb, index, screen, state, update, notice, say, loading, netMessage } from './store';
 
 export async function loadBundleFile(file: File) {
   try {
@@ -35,16 +34,16 @@ export async function restoreFile(file: File) {
   if (!(md instanceof Error)) {
     const ok = confirm(`Import from ModuleDrill?\n\nThis adds: ${md.report.join(', ')}.\n\nYour skill map starts fresh: ModuleDrill did not keep per-question results. Nothing you already have here is removed.`);
     if (!ok) return;
-    update(s => mergeImported(s, md.state));
-    notice.value = 'Imported from ModuleDrill.';
+    notice.value = null;
+    say(update(s => mergeImported(s, md.state)) ? 'Imported from ModuleDrill.' : 'The file was read, but your browser would not save it. Download a backup before closing this tab.');
     return;
   }
   const own = importBackup(json);
   if (own instanceof Error) { notice.value = 'That file is not a backup from this app or from ModuleDrill.'; return; }
   if (!confirm('Replace everything here with this backup? Your current history, mistakes and settings will be overwritten.')) return;
-  state.value = own;
-  if (!saveState(own).ok) notice.value = 'The backup was read, but your browser would not save it.';
-  else notice.value = 'Backup restored.';
+  notice.value = null;
+  // through update(), so a failed save keeps the backup in memory and full storage can make room
+  say(update(() => own) ? 'Backup restored.' : 'The backup was read, but your browser would not save it.');
 }
 
 /** Fetch every usable question so the app works with no connection. */

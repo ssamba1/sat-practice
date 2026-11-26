@@ -45,10 +45,10 @@ describe('fetchIndex', () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: any) => {
       if (url === API.LOOKUP) return ok({ readingLiveItems: [], mathLiveItems: ['e2'] });
       const body = JSON.parse(init.body);
-      return ok(body.test === 2 ? [row('00165291', 'e1'), row('zzzzzzzz', 'e2'), { questionId: 'n' }] : []);
+      return ok(body.test === 2 ? [row('00165291', 'e1'), row('zzzzzzzz', 'e2'), { questionId: 'n' }] : [{ ...row('r1', 'er1'), primary_class_cd: 'CAS' }]);
     }));
     const idx = await fetchIndex();
-    expect(idx.rw).toEqual([]);
+    expect(idx.rw.map(m => m.ext)).toEqual(['er1']);
     expect(idx.math).toEqual([
       { id: '00165291', ext: 'e1', dom: 'H', domName: 'Algebra', skill: 'Linear equations', diff: 'M', live: 0, type: 'spr' },
       { id: 'zzzzzzzz', ext: 'e2', dom: 'H', domName: 'Algebra', skill: 'Linear equations', diff: 'M', live: 1, type: 'mcq' },

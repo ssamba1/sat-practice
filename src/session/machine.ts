@@ -152,8 +152,9 @@ export function finish(s: Session, now: number): { answers: Answer[]; record: Se
   });
   const doms: Record<string, [number, number]> = {};
   for (const a of answers) { const r = doms[DOMNAME[a.dom] ?? a.dom] ||= [0, 0]; r[1]++; if (a.ok) r[0]++; }
-  const label = t.stages.filter(x => x.kind === 'module').map(x => x.label).join(' + ');
-  return { answers, record: { id: String(now), at: now, label, correct: answers.filter(a => a.ok).length, total: answers.length, doms,
+  // only modules actually taken: a full test can end early with "Finish here"
+  const label = t.stages.filter(x => x.kind === 'module' && x.qs).map(x => x.label).join(' + ');
+  return { answers, record: { id: String(t.startedAt), at: now, label, correct: answers.filter(a => a.ok).length, total: answers.length, doms,
     mode: t.mode, ms: answers.reduce((p, a) => p + a.ms, 0) } };
 }
 

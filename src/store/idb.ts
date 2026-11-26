@@ -3,6 +3,12 @@ import type { Index } from '../api/questions';
 type Store = 'meta' | 'body';
 export const INDEX_TTL = 7 * 24 * 3600 * 1000;   // re-check active flags weekly
 
+/** IndexedDB has been seen to stop answering under load; it is only a cache, so after this
+ *  long a read counts as a miss and a write gives up waiting (it may still land later). */
+const SLOW_MS = 4000;
+const within = <T>(p: Promise<T>, fallback: T) =>
+  Promise.race([p, new Promise<T>(res => setTimeout(() => res(fallback), SLOW_MS))]);
+
 /** Tiny IndexedDB wrapper. Every write resolves even on error (storage full),
  *  so a failed cache write never hangs the app. */
 export class Idb {
@@ -22,15 +28,18 @@ export class Idb {
   private async os(store: Store, mode: IDBTransactionMode) {
     return (await this.open()).transaction(store, mode).objectStore(store);
   }
-  async get(store: Store, key: string): Promise<any> {
+  get(store: Store, key: string): Promise<any> { return within(this.rawGet(store, key), undefined); }
+  private async rawGet(store: Store, key: string): Promise<any> {
     const s = await this.os(store, 'readonly');
     return new Promise(res => { const r = s.get(key); r.onsuccess = () => res(r.result); r.onerror = () => res(undefined); });
   }
-  async put(store: Store, key: string, val: unknown): Promise<void> {
+  put(store: Store, key: string, val: unknown): Promise<void> { return within(this.rawPut(store, key, val), undefined); }
+  private async rawPut(store: Store, key: string, val: unknown): Promise<void> {
     const s = await this.os(store, 'readwrite');
     return new Promise(res => { const r = s.put(val, key); r.onsuccess = r.onerror = () => res(); });
   }
-  async getMany(store: Store, keys: string[]): Promise<Record<string, any>> {
+  getMany(store: Store, keys: string[]): Promise<Record<string, any>> { return within(this.rawGetMany(store, keys), {}); }
+  private async rawGetMany(store: Store, keys: string[]): Promise<Record<string, any>> {
     if (!keys.length) return {};
     const s = await this.os(store, 'readonly'), out: Record<string, any> = {};
     return new Promise(res => {
@@ -42,7 +51,8 @@ export class Idb {
       }
     });
   }
-  async putMany(store: Store, entries: [string, unknown][]): Promise<void> {
+  putMany(store: Store, entries: [string, unknown][]): Promise<void> { return within(this.rawPutMany(store, entries), undefined); }
+  private async rawPutMany(store: Store, entries: [string, unknown][]): Promise<void> {
     if (!entries.length) return;
     const s = await this.os(store, 'readwrite');
     return new Promise(res => {
@@ -50,7 +60,8 @@ export class Idb {
       for (const [k, v] of entries) { const r = s.put(v, k); r.onsuccess = r.onerror = () => { if (!--left) res(); }; }
     });
   }
-  async count(store: Store): Promise<number> {
+  count(store: Store): Promise<number> { return within(this.rawCount(store), 0); }
+  private async rawCount(store: Store): Promise<number> {
     const s = await this.os(store, 'readonly');
     return new Promise(res => { const r = s.count(); r.onsuccess = () => res(r.result); r.onerror = () => res(0); });
   }

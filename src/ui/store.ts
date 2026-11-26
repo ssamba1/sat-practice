@@ -33,6 +33,8 @@ export const result = signal<Result | null>(null);
 export const storageWarn = signal(false);
 export const loading = signal<{ msg: string; done: number; total: number } | null>(null);
 export const notice = signal<string | null>(null);
+/** Add to the notice, so a storage warning raised on the way is not overwritten. */
+export const say = (m: string) => { notice.value = notice.value ? notice.value + ' ' + m : m; };
 /** Ref that focuses a dialog's first button when it opens: Preact does not polyfill autoFocus. */
 export const focusOnMount = (el: HTMLElement | null) => el?.focus();
 /** onKeyDown for a modal dialog: Tab and Shift+Tab wrap around inside it. */
@@ -148,7 +150,7 @@ async function fillStage() {
   try {
     const qs = await getQs(built.qs, `Loading ${st.label}`);
     markSeen(built.qs);
-    if (built.short) notice.value = `This module has ${qs.length} questions instead of the usual number: the question pool ran short.`;
+    if (built.short) say(`This module has ${qs.length} questions instead of the usual number: the question pool ran short.`);
     session.value = setStageQs(session.value!, qs);
     persist(session.value);
   } catch (e) {
@@ -221,6 +223,8 @@ function complete(s: Session) {
   // drop the snapshot first: it frees space for the results
   try { localStorage.removeItem(SESSION_KEY); } catch { /* storage blocked */ }
   const saved = update(st => {
+    // finishing a kept copy again (after a failed save) must not record the results twice
+    if (st.sessions.some(x => x.id === record.id)) return st;
     const r = applyAnswers(st.review, answers, now);
     added = r.added; cleared = r.cleared;
     return { ...st, answers: [...st.answers, ...answers], sessions: [record, ...st.sessions], review: r.review };
@@ -260,7 +264,7 @@ export async function resumeSaved() {
       return getQs(metas as Meta[], 'Restoring your session');
     }, Date.now());
     // it may hold results that never saved, so only the student deletes it (Discard it)
-    if (missing) { notice.value = "That saved session can't be reopened: a question in it is no longer in College Board's question bank. It is kept until you discard it."; return; }
+    if (missing) { notice.value = "That saved session can't be reopened: a question in it is no longer in the question list. It stays on the menu for a week; Discard it removes it now."; return; }
     if (!r) { notice.value = 'That saved session could not be restored.'; discardSaved(); return; }
     begin(r.session);
   } catch (e) { notice.value = netMessage(e); }

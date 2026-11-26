@@ -40,6 +40,8 @@ export async function fetchIndex(): Promise<Index> {
       // metadata has no question type: seed from the grid-in list, hydrate corrects it
       type: GRID.has(m.questionId) ? 'spr' : 'mcq',
     }));
+    // an empty list would empty every module for a week; keep the cached index instead
+    if (!out[sec].length) throw new Error(`College Board returned no ${sec === 'rw' ? 'Reading and Writing' : 'Math'} questions`);
   }
   return out;
 }

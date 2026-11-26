@@ -105,3 +105,43 @@ describe('storage full', () => {
     expect(store.notice.value).toMatch(/older than a year/);
   });
 });
+
+describe('round 4: storage full paths', () => {
+  const full = () => {
+    const real = localStorage.setItem.bind(localStorage);
+    return vi.spyOn(localStorage, 'setItem').mockImplementation((k: string, v: string) => { if (k === STATE_KEY) throw new Error('QuotaExceededError'); real(k, v); });
+  };
+  it('finishing the kept review copy again does not record the results twice', () => {
+    store.storageWarn.value = false; store.state.value = defaultState(); saveState(defaultState());
+    full();
+    const s0 = { ...startSession('custom', false, drillPlan([q(1)], null), 0), resp: [[1]] };
+    store.session.value = s0; store.screen.value = 'session';
+    store.act(submitModule);
+    expect(store.state.value.sessions).toHaveLength(1);
+    store.session.value = { ...s0, view: 'review' }; store.screen.value = 'session';   // resumed from the kept copy
+    store.act(submitModule);
+    expect(store.state.value.sessions).toHaveLength(1);
+    expect(store.state.value.answers).toHaveLength(1);
+  });
+  it('a restored backup that will not save stays in memory instead of reverting', async () => {
+    store.storageWarn.value = false; store.state.value = defaultState(); saveState(defaultState());
+    const { restoreFile } = await import('../../src/ui/data');
+    const { backupJson } = await import('../../src/store/backup');
+    const b = defaultState(); b.sessions = [{ id: 'X', at: 1, label: 'from backup', correct: 1, total: 1, doms: {} }];
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const spy = full();
+    await restoreFile(new File([backupJson(b, 1)], 'b.json'));
+    expect(store.notice.value).toMatch(/would not save/);
+    spy.mockRestore();
+    store.update(s => s);
+    expect(store.state.value.sessions.map(r => r.id)).toEqual(['X']);
+  });
+  it('a ModuleDrill import that will not save says so', async () => {
+    store.storageWarn.value = false; store.state.value = defaultState(); saveState(defaultState());
+    const { restoreFile } = await import('../../src/ui/data');
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    full();
+    await restoreFile(new File([JSON.stringify({ moduledrill: 1, at: 1, data: { 'satsim.tutor': 'true' } })], 'm.json'));
+    expect(store.notice.value).toMatch(/would not save/);
+  });
+});

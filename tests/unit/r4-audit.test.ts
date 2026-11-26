@@ -72,3 +72,19 @@ describe('making room when storage is full', () => {
     expect(r.state.sessions).toHaveLength(1);
   });
 });
+
+describe('a stalled IndexedDB', () => {
+  it('never hangs the app: reads count as a cache miss and writes give up', async () => {
+    const { vi } = await import('vitest');
+    const { Idb } = await import('../../src/store/idb');
+    vi.useFakeTimers();
+    vi.stubGlobal('indexedDB', { open: () => ({}) });   // a request that never answers
+    const db = new Idb('stalled');
+    const get = db.get('meta', 'index'), many = db.getMany('body', ['a']), put = db.putMany('body', [['a', 1]]);
+    await vi.advanceTimersByTimeAsync(10000);
+    await expect(get).resolves.toBeUndefined();
+    await expect(many).resolves.toEqual({});
+    await expect(put).resolves.toBeUndefined();
+    vi.unstubAllGlobals(); vi.useRealTimers();
+  });
+});

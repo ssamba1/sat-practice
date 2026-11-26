@@ -74,7 +74,7 @@ describe('unexpected API data', () => {
       return ok(JSON.parse(init.body).test === 2 ? [
         { questionId: 'a', external_id: 'e1', primary_class_cd: 'H', difficulty: 'M' },
         { questionId: 'b', external_id: 'e2', primary_class_cd: 'H', skill_desc: 'x', difficulty: 'X' },
-      ] : []);
+      ] : [{ questionId: 'r', external_id: 'er', primary_class_cd: 'CAS', skill_desc: 'w', difficulty: 'E' }]);
     }));
     const idx = await fetchIndex();
     expect(idx.math.map(m => [m.ext, m.skill])).toEqual([['e1', '']]);
@@ -90,5 +90,20 @@ describe('sanitizer', () => {
     const out = sanitizeHtml('<svg><a><animate attributeName="href" values="javascript:alert(1)"/><set attributeName="href" to="javascript:x"/><text>t</text></a></svg>');
     expect(out).not.toMatch(/animate|<set/i);
     expect(out).toContain('t');
+  });
+});
+
+describe('round 4: index and labels', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it('refuses an index with an empty section, so the cached one is kept', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: any) => ({ ok: true, json: async () =>
+      url === API.LOOKUP ? { readingLiveItems: [], mathLiveItems: [] }
+        : JSON.parse(init.body).test === 2 ? [{ questionId: 'a', external_id: 'e1', primary_class_cd: 'H', difficulty: 'M' }] : [] })));
+    await expect(fetchIndex()).rejects.toThrow();
+  });
+  it('a full test finished early is labelled by the modules actually taken', async () => {
+    const { finish } = await import('../../src/session/machine');
+    const s = setStageQs(startSession('full', false, fullTestPlan(), 0), many(27, 'CAS'));
+    expect(finish(s, 1).record.label).toBe(s.stages[0].kind === 'module' ? s.stages[0].label : '');
   });
 });
