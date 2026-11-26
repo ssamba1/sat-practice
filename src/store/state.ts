@@ -66,3 +66,11 @@ export function loadState(): AppState {
 export function saveState(s: AppState): { ok: boolean } {
   try { localStorage.setItem(STATE_KEY, JSON.stringify(s)); return { ok: true }; } catch { return { ok: false }; }
 }
+
+const YEAR = 365 * 864e5;
+/** Room for new results when storage is full: answers over a year old carry almost no weight
+ *  (30-day half-life), so they go first. Sessions, mistakes and vocab are kept. */
+export function trimOld(s: AppState, now: number) {
+  const answers = s.answers.filter(a => now - a.at <= YEAR);
+  return { state: { ...s, answers }, dropped: s.answers.length - answers.length };
+}

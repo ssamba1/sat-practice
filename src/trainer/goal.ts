@@ -20,11 +20,22 @@ export const upcomingSat = (now: number) => SAT_DATES.filter(d => daysUntil(d.da
 
 export type Registration = { kind: 'expected' | 'closed' } | { kind: 'regular' | 'late'; until: string };
 
-/** Where registration stands for an official date. shortcut: compares local calendar days, while
- *  College Board deadlines end at 11:59 p.m. ET, so it can be off by hours far from ET. */
+const ET = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hourCycle: 'h23',
+  year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' });
+
+/** The instant a College Board deadline ends: 11:59:59 p.m. New York time on that date. */
+export function etDeadline(date: string) {
+  const [y, m, d] = date.split('-').map(Number);
+  const asUtc = Date.UTC(y, m - 1, d, 23, 59, 59);
+  const p = Object.fromEntries(ET.formatToParts(asUtc).map(x => [x.type, Number(x.value)]));
+  const wall = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+  return asUtc + (asUtc - wall);   // shift by New York's offset that day (EST or EDT)
+}
+
+/** Where registration stands for an official date, judged by College Board's ET deadlines. */
 export function registration(d: SatDate, now: number): Registration {
   if (d.expected || !d.register) return { kind: 'expected' };
-  if (daysUntil(d.register, now) >= 0) return { kind: 'regular', until: d.register };
-  if (d.late && daysUntil(d.late, now) >= 0) return { kind: 'late', until: d.late };
+  if (now <= etDeadline(d.register)) return { kind: 'regular', until: d.register };
+  if (d.late && now <= etDeadline(d.late)) return { kind: 'late', until: d.late };
   return { kind: 'closed' };
 }

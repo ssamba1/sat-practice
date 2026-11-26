@@ -7,7 +7,8 @@ export default defineConfig({
   expect: { timeout: 15000 },
   use: { baseURL: 'http://localhost:5181', channel: 'msedge' },
   webServer: [
-    { command: 'npx vite --port 5181 --strictPort', port: 5181, reuseExistingServer: true },
+    // wait for the app entry itself, not just the open port: a cold dev server timed out first page loads
+    { command: 'npx vite --port 5181 --strictPort', url: 'http://localhost:5181/src/main.tsx', reuseExistingServer: true },
     // the production build, for the service worker test
     { command: 'npm run build && npx vite preview --port 5182 --strictPort', port: 5182, reuseExistingServer: true, timeout: 120000 },
   ],

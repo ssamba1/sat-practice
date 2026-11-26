@@ -73,3 +73,31 @@ test('closing a panel puts focus back on the button that opened it', async ({ pa
   await page.getByRole('dialog', { name: 'Reference sheet' }).getByRole('button', { name: 'Close' }).click();
   await expect(ref).toBeFocused();
 });
+
+test('Tab stays inside an open panel', async ({ page }) => {
+  await page.getByRole('button', { name: /^Math module/ }).click();
+  await page.getByRole('button', { name: /Question 1 of 22/ }).click();
+  const nav = page.getByRole('dialog', { name: 'Question navigator' });
+  const last = nav.getByRole('button', { name: 'Go to Review Page' });
+  await expect(last).toBeFocused();
+  await page.keyboard.press('Tab');       // past the last button wraps to the first
+  await expect(nav.getByRole('button', { name: 'Question 1', exact: true })).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(last).toBeFocused();
+});
+
+test('a saved session with a question College Board removed is kept, not deleted', async ({ page }) => {
+  page.on('dialog', d => d.accept());
+  await page.getByRole('button', { name: /^Math module/ }).click();
+  await expect(page.getByText('Question 1 of 22')).toBeVisible();
+  await page.getByRole('button', { name: /Save and exit/ }).click();
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('sat-remake.session')!);
+    s.stages.find((x: any) => x.qs).qs[0] = 'gone';
+    localStorage.setItem('sat-remake.session', JSON.stringify(s));
+  });
+  await page.getByRole('button', { name: /^Resume:/ }).click();
+  await expect(page.getByText(/no longer in College Board's question bank/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Resume:/ })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('sat-remake.session'))).not.toBeNull();
+});

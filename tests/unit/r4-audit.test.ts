@@ -5,18 +5,26 @@ import { SAT_DATES } from '../../src/data/satdates';
 import { applyAnswers } from '../../src/review/schedule';
 import { summarise } from '../../src/stats/summary';
 import { secs } from '../../src/ui/Results';
+import { trimOld, defaultState } from '../../src/store/state';
 
-const at = (iso: string) => new Date(iso + 'T12:00:00').getTime();
 const dec5 = SAT_DATES.find(d => d.date === '2026-12-05')!;
 
 describe('registration status for an official date', () => {
+  // deadlines end at 11:59 p.m. ET; in November ET is UTC-5
+  const utc = (iso: string) => Date.parse(iso + 'Z');
   it('moves from regular to late to closed (College Board, read 2026-11-25)', () => {
-    expect(registration(dec5, at('2026-11-20'))).toEqual({ kind: 'regular', until: '2026-11-20' });
-    expect(registration(dec5, at('2026-11-21'))).toEqual({ kind: 'late', until: '2026-11-24' });
-    expect(registration(dec5, at('2026-11-25'))).toEqual({ kind: 'closed' });
+    expect(registration(dec5, utc('2026-11-21T04:58:00'))).toEqual({ kind: 'regular', until: '2026-11-20' });
+    expect(registration(dec5, utc('2026-11-21T05:01:00'))).toEqual({ kind: 'late', until: '2026-11-24' });
+    expect(registration(dec5, utc('2026-11-25T04:58:00'))).toEqual({ kind: 'late', until: '2026-11-24' });
+    expect(registration(dec5, utc('2026-11-25T05:01:00'))).toEqual({ kind: 'closed' });
+  });
+  it('uses daylight time for a spring deadline (ET is UTC-4 in May)', () => {
+    const jun5 = SAT_DATES.find(d => d.date === '2027-06-05')!;
+    expect(registration(jun5, utc('2027-05-22T03:58:00')).kind).toBe('regular');
+    expect(registration(jun5, utc('2027-05-22T04:01:00')).kind).toBe('late');
   });
   it('has no deadlines for a date College Board has not confirmed', () => {
-    expect(registration(SAT_DATES.find(d => d.expected)!, at('2026-11-25'))).toEqual({ kind: 'expected' });
+    expect(registration(SAT_DATES.find(d => d.expected)!, utc('2026-11-25T12:00:00'))).toEqual({ kind: 'expected' });
   });
 });
 
@@ -49,5 +57,18 @@ describe('time format', () => {
     expect(secs(59600)).toBe('1m 0s');
     expect(secs(61000)).toBe('1m 1s');
     expect(secs(4400)).toBe('4s');
+  });
+});
+
+describe('making room when storage is full', () => {
+  const DAY = 864e5, NOW = 1000 * DAY;
+  it('drops only answers older than a year and keeps everything else', () => {
+    const st = defaultState();
+    st.answers = [a(0, true, 'custom', NOW - 400 * DAY), a(0, true, 'custom', NOW - 300 * DAY), a(0, false, 'custom', NOW)];
+    st.sessions = [{ id: '1', at: NOW - 400 * DAY, label: 'old', correct: 1, total: 1, doms: {}, mode: 'custom', ms: 1 }];
+    const r = trimOld(st, NOW);
+    expect(r.dropped).toBe(1);
+    expect(r.state.answers.map(x => x.at)).toEqual([NOW - 300 * DAY, NOW]);
+    expect(r.state.sessions).toHaveLength(1);
   });
 });

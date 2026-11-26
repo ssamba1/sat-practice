@@ -83,3 +83,25 @@ describe('restoring a backup file', () => {
     expect(store.notice.value).toMatch(/not valid JSON/);
   });
 });
+
+describe('storage full', () => {
+  it('saves new results by dropping year-old answers, and says so', () => {
+    const old = defaultState();
+    old.answers = Array.from({ length: 50 }, (_, i) => ({ qid: 'q' + i, ext: 'e' + i, sec: 'math' as const, dom: 'H', skill: 's', diff: 'M' as const,
+      resp: 0, ok: true, ms: 1, mode: 'custom' as const, at: Date.now() - 400 * 864e5 }));
+    saveState(old);
+    const limit = JSON.stringify(old).length;   // the store is exactly full
+    const real = localStorage.setItem.bind(localStorage);
+    vi.spyOn(localStorage, 'setItem').mockImplementation((k: string, v: string) => {
+      if (v.length > limit) throw new DOMException('full', 'QuotaExceededError');
+      real(k, v);
+    });
+    store.notice.value = null; store.storageWarn.value = false;
+    const ok = store.update(s => ({ ...s, sessions: [{ id: 'n', at: Date.now(), label: 'new', correct: 0, total: 0, doms: {}, mode: 'custom', ms: 0 }, ...s.sessions] }));
+    expect(ok).toBe(true);
+    const saved = JSON.parse(localStorage.getItem(STATE_KEY)!);
+    expect(saved.sessions[0].id).toBe('n');
+    expect(saved.answers).toHaveLength(0);
+    expect(store.notice.value).toMatch(/older than a year/);
+  });
+});

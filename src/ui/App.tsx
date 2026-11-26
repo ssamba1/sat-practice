@@ -1,5 +1,5 @@
 import { useEffect } from 'preact/hooks';
-import { screen, state, storageWarn, notice, fatal, loading, bootMsg, bootError, boot, indexStale, session, exitSession, focusOnMount } from './store';
+import { screen, state, storageWarn, notice, fatal, loading, bootMsg, bootError, boot, indexStale, session, exitSession, focusOnMount, trapTab } from './store';
 import { Menu } from './Menu';
 import { SessionView } from './SessionView';
 import { Results } from './Results';
@@ -28,7 +28,7 @@ export function App() {
       {s === 'skills' && <SkillMap />}
       {loading.value && <Loading />}
       {fatal.value && (
-        <div class="navpop" role="alertdialog" aria-modal="true" aria-label="Problem">
+        <div class="navpop" role="alertdialog" aria-modal="true" onKeyDown={trapTab} aria-label="Problem">
           <div class="navcard"><h3>Something went wrong</h3><p>{fatal.value.msg}</p>
             <div class="btnrow" style="justify-content:center">
               <button class="navbtn" onClick={fatal.value.retry} ref={focusOnMount}>{fatal.value.label ?? 'Try again'}</button>

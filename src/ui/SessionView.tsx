@@ -5,7 +5,7 @@ import {
   answer, goTo, toReview, submitModule, toggleMark, strike, setHl, check, toggleAbc, currentStage, currentQs, secOf, fmt, clockView,
   type Session,
 } from '../session/machine';
-import { session, act, exitSession, state, update, focusOnMount } from './store';
+import { session, act, exitSession, state, update, focusOnMount, trapTab } from './store';
 import { markSelection } from './highlight';
 import { Calculator } from './Calculator';
 
@@ -173,7 +173,7 @@ function GridIn({ resp, locked }: { resp: Session['resp'][0][0]; locked: boolean
 function Navigator({ s, close }: { s: Session; close: () => void }) {
   const qs = currentQs(s)!;
   return (
-    <div class="navpop" role="dialog" aria-modal="true" aria-label="Question navigator" onClick={e => { if (e.target === e.currentTarget) close(); }}>
+    <div class="navpop" role="dialog" aria-modal="true" onKeyDown={trapTab} aria-label="Question navigator" onClick={e => { if (e.target === e.currentTarget) close(); }}>
       <div class="navcard">
         <h3>{currentStage(s).label}</h3>
         <div class="legend"><span>&#x25A0; Answered</span><span>&#x2B1A; Unanswered</span><span style="color:var(--mark)">&#x2691; For review</span></div>
@@ -207,7 +207,7 @@ function ReviewPage({ s }: { s: Session }) {
 
 function Reference({ close }: { close: () => void }) {
   return (
-    <div class="navpop" role="dialog" aria-modal="true" aria-label="Reference sheet" onClick={e => { if (e.target === e.currentTarget) close(); }}>
+    <div class="navpop" role="dialog" aria-modal="true" onKeyDown={trapTab} aria-label="Reference sheet" onClick={e => { if (e.target === e.currentTarget) close(); }}>
       <div class="navcard" style="width:min(680px,94vw)">
         <h3>Reference</h3>
         <div style="font-size:14.5px;line-height:1.9;margin-top:14px">

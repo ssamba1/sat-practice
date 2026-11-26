@@ -65,8 +65,8 @@ function Goal() {
 
 const regText = (r: Registration) =>
   r.kind === 'expected' ? 'College Board has not confirmed this date yet.'
-    : r.kind === 'regular' ? `Register by ${fmt(r.until)}.`
-    : r.kind === 'late' ? `Regular registration has closed. Late registration (extra fee) runs until ${fmt(r.until)}.`
+    : r.kind === 'regular' ? `Register by ${fmt(r.until)}, 11:59 p.m. ET.`
+    : r.kind === 'late' ? `Regular registration has closed. Late registration (extra fee) runs until ${fmt(r.until)}, 11:59 p.m. ET.`
     : 'Registration for this date has closed.';
 
 const fmt = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });

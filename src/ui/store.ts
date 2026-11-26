@@ -1,7 +1,7 @@
 import { signal } from '@preact/signals';
 import { fetchIndex, hydrate, type Index, type Meta, type Question, type Section, type Diff } from '../api/questions';
 import { Idb, loadIndex } from '../store/idb';
-import { loadState, saveState, migrate, STATE_KEY, type AppState, type Mode, type Answer, type SessionRecord } from '../store/state';
+import { loadState, saveState, trimOld, migrate, STATE_KEY, type AppState, type Mode, type Answer, type SessionRecord } from '../store/state';
 import { buildModule, buildCustom } from '../bank/build';
 import { MIX } from '../bank/spec';
 import { applyAnswers, dueItems } from '../review/schedule';
@@ -35,6 +35,14 @@ export const loading = signal<{ msg: string; done: number; total: number } | nul
 export const notice = signal<string | null>(null);
 /** Ref that focuses a dialog's first button when it opens: Preact does not polyfill autoFocus. */
 export const focusOnMount = (el: HTMLElement | null) => el?.focus();
+/** onKeyDown for a modal dialog: Tab and Shift+Tab wrap around inside it. */
+export function trapTab(e: KeyboardEvent) {
+  if (e.key !== 'Tab') return;
+  const f = [...(e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')];
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1], at = document.activeElement;
+  if (!f.includes(at as HTMLElement) || at === (e.shiftKey ? first : last)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+}
 export const fatal = signal<{ msg: string; retry: () => void; label?: string } | null>(null);
 
 /** What is saved right now, which another tab may have changed. Null when unreadable. */
@@ -47,7 +55,14 @@ function stored(): AppState | null {
 export function update(fn: (s: AppState) => AppState): boolean {
   const base = storageWarn.value ? state.value : stored() ?? state.value;
   state.value = fn(base);
-  const ok = saveState(state.value).ok;
+  let ok = saveState(state.value).ok;
+  if (!ok) {
+    const t = trimOld(state.value, Date.now());
+    if (t.dropped && saveState(t.state).ok) {
+      state.value = t.state; ok = true;
+      notice.value = `Storage was full, so ${t.dropped} answer${t.dropped === 1 ? '' : 's'} older than a year came out of the detailed log to make room. Session history, mistakes and vocab are kept.`;
+    }
+  }
   storageWarn.value = !ok;
   return ok;
 }
@@ -238,10 +253,14 @@ export async function resumeSaved() {
   if (!json) return;
   const byExt = metaByExt();
   try {
+    let missing = false;
     const r = await restore(json, async exts => {
       const metas = exts.map(e => byExt.get(e));
-      return metas.some(m => !m) ? [] : getQs(metas as Meta[], 'Restoring your session');
+      if (metas.some(m => !m)) { missing = true; return []; }
+      return getQs(metas as Meta[], 'Restoring your session');
     }, Date.now());
+    // it may hold results that never saved, so only the student deletes it (Discard it)
+    if (missing) { notice.value = "That saved session can't be reopened: a question in it is no longer in College Board's question bank. It is kept until you discard it."; return; }
     if (!r) { notice.value = 'That saved session could not be restored.'; discardSaved(); return; }
     begin(r.session);
   } catch (e) { notice.value = netMessage(e); }
