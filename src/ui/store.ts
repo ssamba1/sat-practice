@@ -106,7 +106,7 @@ async function getQs(metas: Meta[], msg = 'Loading questions'): Promise<Question
   try {
     const { qs, drift } = await hydrate(metas, idb, (done, total) => { loading.value = { msg, done, total }; });
     // keep the stored timestamp: a bundle's index must stay stale so the live bank wins later
-    if (drift && index.value) { const c = await idb.get('meta', 'index'); idb.put('meta', 'index', { ts: c?.ts ?? 0, data: index.value }); }
+    if (drift && index.value) { const c = await idb.get('meta', 'index'); idb.put('meta', 'index', { ...c, ts: c?.ts ?? 0, data: index.value }); }
     return qs;
   } finally { loading.value = null; }
 }

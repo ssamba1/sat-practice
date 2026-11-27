@@ -73,6 +73,10 @@ mark.hl { background: var(--hl); color: inherit; cursor: pointer; border-radius:
 /* figures are drawn for white paper: keep them on white in dark mode */
 :root[data-theme="dark"] :is(.stim, .stem) :is(img, svg) { background: #fff; border-radius: 4px; padding: 4px }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.stim, .stem) :is(img, svg) { background: #fff; border-radius: 4px; padding: 4px } }
+/* older (IBN) questions draw each expression as an inline image of black text on transparent */
+:root :is(.stim, .stem, .opt, .rat, li) img.math-img { display: inline; margin: 0; padding: 0; background: none; vertical-align: middle; max-width: 100% }
+:root[data-theme="dark"] :is(.stim, .stem, .opt, .rat, li) img.math-img { filter: invert(1) hue-rotate(180deg) }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.stim, .stem, .opt, .rat, li) img.math-img { filter: invert(1) hue-rotate(180deg) } }
 .stim figure, .stem figure { margin: 12px 0 }
 
 .opts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px }

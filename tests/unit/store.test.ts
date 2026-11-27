@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Idb, loadIndex, INDEX_TTL } from '../../src/store/idb';
+import { Idb, loadIndex, INDEX_TTL, INDEX_V } from '../../src/store/idb';
 import { loadState, saveState, migrate, defaultState, STATE_KEY } from '../../src/store/state';
 import * as q from '../../src/api/questions';
 
@@ -27,7 +27,7 @@ describe('Idb', () => {
 describe('loadIndex', () => {
   it('uses a cached index inside the TTL without fetching', async () => {
     const db = freshDb();
-    await db.put('meta', 'index', { ts: Date.now(), data: IDX });
+    await db.put('meta', 'index', { ts: Date.now(), v: INDEX_V, data: IDX });
     const spy = vi.spyOn(q, 'fetchIndex');
     expect((await loadIndex(db, q.fetchIndex)).from).toBe('cache');
     expect(spy).not.toHaveBeenCalled();

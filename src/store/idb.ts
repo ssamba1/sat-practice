@@ -1,6 +1,8 @@
 import type { Index } from '../api/questions';
 
 type Store = 'meta' | 'body';
+// 2: adds math questions that have an IBN instead of an external_id
+export const INDEX_V = 2;
 export const INDEX_TTL = 7 * 24 * 3600 * 1000;   // re-check active flags weekly
 
 /** IndexedDB has been seen to stop answering under load; it is only a cache, so after this
@@ -74,11 +76,11 @@ export class Idb {
 export async function loadIndex(db: Idb, fetcher: () => Promise<Index>, onMsg?: (m: string) => void):
   Promise<{ index: Index; from: 'cache' | 'network' | 'stale'; error?: unknown }> {
   const cached = await db.get('meta', 'index');
-  if (cached && Date.now() - cached.ts < INDEX_TTL) return { index: cached.data, from: 'cache' };
+  if (cached && cached.v === INDEX_V && Date.now() - cached.ts < INDEX_TTL) return { index: cached.data, from: 'cache' };
   try {
     onMsg?.('Fetching the question index from College Board');
     const index = await fetcher();
-    await db.put('meta', 'index', { ts: Date.now(), data: index });
+    await db.put('meta', 'index', { ts: Date.now(), v: INDEX_V, data: index });
     return { index, from: 'network' };
   } catch (error) {
     if (cached) return { index: cached.data, from: 'stale', error };

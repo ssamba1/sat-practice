@@ -61,7 +61,7 @@ export async function cacheAll() {
     }
     // bodies corrected some grid-in guesses in place; keep the index's own timestamp
     const cached = await idb.get('meta', 'index');
-    await idb.put('meta', 'index', { ts: cached?.ts ?? 0, data: idx });
+    await idb.put('meta', 'index', { ...cached, ts: cached?.ts ?? 0, data: idx });
     notice.value = `All ${metas.length} questions are saved. The app now works offline, except the calculator.`;
   } catch (e) {
     notice.value = netMessage(e, 'the rest could not be fetched') + ' What was saved so far is kept.';
